@@ -9,58 +9,67 @@ from generation_utils import load_txt
 import pdb
 
 
+class Arguments:
+
+    '''experiment configs'''
+
+    debug = False
+    skip_load = False #skip loading sentence model for faster debugging
+    verbose = False
+    fresh = False #start new experiment?
+    expID = 1
+    exp_name = 'experiment_{}'.format(expID)
+    num_workers = 40
+    scene_num = None
+
+    '''LLM configs'''
+    use_similar_example = False
+    sentence_model = 'stsb-roberta-large' #use 'stsb-roberta-large' for best quality
+    query_task = None
+
+    example_path = None
+    example_id = None
+    batch_size = 10000 #for semantic matching for sentence model
+
+
+    '''OpenAI API configs'''
+    api_max_tokens = 8
+    api_temperature = 0.6
+    api_top_p = 0.85
+    api_n = 1
+    api_logprobs = 1
+    api_echo = False
+    api_presence_penalty = 0.2
+    api_frequency_penalty = 0.2
+    api_best_of = 1
+
+    '''Codex generation params'''
+    api_max_steps = 20
+    use_cutoff_threshold = True
+    api_cutoff_threshold = -100
+    api_beta = 0.2
+    api_percent_terminate = 0.2
+
+
+    '''Other configs'''
+    add_desc = False
+    iterative = True
+    raw_lm = False
+    seed = None #setting random seed
+    use_example_subset = False
+    num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
+    translated_condition = False
+    engine = 'davinci-codex'
+    allow_charges = False #allow non-codex models from openai api
+    finetuned = False #using finetuned LLM (after pretraining)
+
 
 def get_args():
 
-    def str2bool(v):
-        return v.lower() == 'true'
-
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--debug', type=str2bool, default=False)
-    parser.add_argument('--skip_load', type=str2bool, default=False, help='skip loading sentence model for faster debugging')
-    parser.add_argument('--verbose', type=str2bool, default=False)
     parser.add_argument('--sweep', action='store_true')
-    parser.add_argument('--fresh', type=str2bool, default=False)
-    parser.add_argument('--expID', type=int, default=1)
-    parser.add_argument('--exp_name', type=str, default=None)
-    parser.add_argument('--num_workers', type=int, default=40)
-    parser.add_argument('--scene_num', type=int, default=None)
 
-    parser.add_argument('--use_similar_example', type=str2bool, default=False) #using
-    parser.add_argument('--sentence_model', type=str, default='stsb-roberta-large', help='default for best quality; ')
-    parser.add_argument('--query_task', type=str, default=None)
-    parser.add_argument('--example_path', type=str, default=None)
-    parser.add_argument('--example_id', type=int, default=None)
-    parser.add_argument('--batch_size', type=int, default=10000, help='used to do semantic matching for sentence model')
-
-    # openai api params
-    parser.add_argument('--api_max_tokens', type=int, default=8)
-    parser.add_argument('--api_temperature', type=float, default=0.6)
-    parser.add_argument('--api_top_p', type=float, default=0.85)
-    parser.add_argument('--api_n', type=int, default=1)
-    parser.add_argument('--api_logprobs', type=float, default=1)
-    parser.add_argument('--api_echo', type=str2bool, default=False)
-    parser.add_argument('--api_presence_penalty', type=float, default=0.2)
-    parser.add_argument('--api_frequency_penalty', type=float, default=0.2)
-    parser.add_argument('--api_best_of', type=int, default=1)
-    # other codex generation params
-    parser.add_argument('--api_max_steps', type=int, default=20)
-    parser.add_argument('--use_cutoff_threshold', type=str2bool, default=True)
-    parser.add_argument('--api_cutoff_threshold', type=float, default=-100)
-    parser.add_argument('--api_beta', type=float, default=0.2)
-    parser.add_argument('--api_percent_terminate', type=float, default=0.2)
-    # other
-    parser.add_argument('--add_desc', type=str2bool, default=False)
-    parser.add_argument('--iterative', type=str2bool, default=True)
-    parser.add_argument('--raw_lm', type=str2bool, default=False)
-    parser.add_argument('--seed', type=int, default=None, help='random seed')
-    parser.add_argument('--use_example_subset', type=str2bool, default=False)
-    parser.add_argument('--num_available_examples', type=int, default=-1, help='restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed')
-    parser.add_argument('--translated_condition', type=str2bool, default=False)
-    parser.add_argument('--engine', type=str, default='davinci-codex')
-    parser.add_argument('--allow_charges', type=str2bool, default=False, help='allow using non-codex models from openai api')
-    parser.add_argument('--finetuned', type=str2bool, default=False)
-
+    parsed_args = parser.parse_args()
     args = Arguments()
 
     if args.seed is not None:
@@ -73,7 +82,7 @@ def get_args():
         project_name = 'inst-decomp'
         exp_prefix = 'vh-zero'
 
-    if args.sweep:
+    if parsed_args.sweep:
         wandb.init(project=project_name)
         args.exp_name = wandb.run.name
         if args.exp_name is None:
@@ -90,7 +99,7 @@ def get_args():
         if wandb.run.resumed:
             print(f'*** resuming run {args.exp_name}')
 
-    if args.sweep:
+    if parsed_args.sweep:
         args.fresh = True
 
     args.api_cutoff_threshold = args.api_cutoff_threshold if args.use_cutoff_threshold else -100
@@ -104,7 +113,7 @@ def get_args():
     args.parsed_save_path = os.path.join(args.exp_path, 'parsed')
     args.init_graph_save_path = os.path.join(args.exp_path, 'init_graphs')
     args.unity_parsed_save_path = os.path.join(args.exp_path, 'unity_parsed')
-    if os.path.exists(args.exp_path) and args.sweep:
+    if os.path.exists(args.exp_path) and parsed_args.sweep:
         print(f'** removing previously existed sweep dir [{args.exp_path}]')
         os.system(f'rm -rf {args.exp_path}')
     os.makedirs(args.api_save_path, exist_ok=True)

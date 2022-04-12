@@ -15,13 +15,14 @@ from add_preconds import *
 import wandb
 import multiprocessing as mp
 import numpy as np
-from arguments import get_args
+from arguments_new import get_args
 from sentence_transformers import SentenceTransformer
 from generation_utils import *
 import time
 import torch
 from tqdm import tqdm
 import glob
+import pdb
 
 # multiprocessing version
 def evaluate_script(kwargs):
@@ -98,10 +99,10 @@ def evaluate_script(kwargs):
         print('PRECOND: {}'.format(precond))
 
     try:
-        (message, init_graph_dict, final_state, graph_state_list, input_graph, 
+        (message, init_graph_dict, final_state, graph_state_list, input_graph,
                                 id_mapping, _, graph_helper, modified_script) = check_script(
-                                        program_lines, 
-                                        precond, 
+                                        program_lines,
+                                        precond,
                                         scene_path,
                                         inp_graph_dict=graph_dict,
                                         modify_graph=True,
@@ -115,7 +116,7 @@ def evaluate_script(kwargs):
 
     if verbose:
         print(message)
-    
+
     if 'is executable' in message:
         info['executed'] = True
         if verbose:
@@ -217,7 +218,7 @@ def generate_program(query_task_desc, example_path, sentence_model, action_list,
         generation_info[(query_task, query_desc)]['parsed_text'] = parsed_program_text
         generation_info[(query_task, query_desc)]['parsed_program_lines'] = parsed_program_lines
         generation_info[(query_task, query_desc)]['parsibility'] = parse_info['parsibility']
-    
+
 
 def evaluate_lcs_score(generation_info, verbose=False):
     # evaluate lcs score for each task
@@ -368,7 +369,7 @@ def transformers_engine(model_id, device):
     except OSError as e:
         tokenizer = AutoTokenizer.from_pretrained('gpt2-large')
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16 if 'gpt-j' in model_id else torch.float32, pad_token_id=tokenizer.eos_token_id).to(device)
-    
+
     def _generator(kwargs):
         input_ids = tokenizer(kwargs['prompt'], return_tensors="pt").input_ids.to(device)
         prompt_len = input_ids.shape[-1]
@@ -399,7 +400,7 @@ def transformers_engine(model_id, device):
             # truncate the log prob as well
             return_dict['choices'][i]['logprobs'] = dict(token_logprobs=log_probs[i, :stop_idx].detach().cpu().numpy())
         return return_dict
-    
+
     def _generator_multi(kwargs):
         """n could be too large to run, so split the request into multiple ones"""
         if kwargs['n'] <= 10:
@@ -586,7 +587,7 @@ def update_info_with_execution(generation_info, execution_results):
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]
                 info['precond_error'] = [scene_result['precond_error'] for scene_result in script_results.values()]
-    
+
     return generation_info
 
 
