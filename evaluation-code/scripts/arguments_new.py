@@ -11,8 +11,12 @@ import pdb
 
 class Arguments:
 
-    '''experiment configs'''
+    '''default directories storing datasets'''
+    RESOURCE_DIR = os.path.relpath() #contains allowed actions, class name equivalences, train and test tasks (txt files)
+    SCENE_DIR = os.path.relpath()
+    DATASET_DIR = os.path.relpath()
 
+    '''experiment configs'''
     debug = False
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
@@ -20,15 +24,15 @@ class Arguments:
     expID = 1
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
-    scene_num = None
+    scene_num = None #take example train paths/tasks from specific scene [if None: uses all train paths/tasks]
 
     '''LLM configs'''
     use_similar_example = False
     sentence_model = 'stsb-roberta-large' #use 'stsb-roberta-large' for best quality
-    query_task = None
+    query_task = 'all'
 
     example_path = None
-    example_id = None
+    example_id = None #selecting specific example id [example_id % num tasks] from the set of train tasks/paths
     batch_size = 10000 #for semantic matching for sentence model
 
 
@@ -59,7 +63,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = False
-    engine = 'davinci-codex'
+    engine = 'davinci-codex' #to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -136,6 +140,7 @@ def get_args():
     args.test_paths = sorted([os.path.join(DATASET_DIR, path) for path in args.test_paths])
     args.train_paths = load_txt(os.path.join(RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n')
     args.train_paths = sorted([os.path.join(DATASET_DIR, path) for path in args.train_paths])
+
     if args.scene_num is not None:
         # retrieve examples from specified scene
         args.example_paths = [path for path in args.train_paths if 'TrimmedTestScene{}_graph'.format(args.scene_num) in path]
