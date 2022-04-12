@@ -132,14 +132,14 @@ def get_args():
     if args.example_path is None and args.example_id is None:
         assert args.use_similar_example or args.finetuned
 
-    args.allowed_action_path = os.path.join(RESOURCE_DIR, 'allowed_actions.json')
-    args.name_equivalence_path = os.path.join(RESOURCE_DIR, 'class_name_equivalence.json')
-    args.scene_path_format = os.path.join(SCENE_DIR, 'TrimmedTestScene{}_graph.json')
+    args.allowed_action_path = os.path.join(args.RESOURCE_DIR, 'allowed_actions.json')
+    args.name_equivalence_path = os.path.join(args.RESOURCE_DIR, 'class_name_equivalence.json')
+    args.scene_path_format = os.path.join(args.SCENE_DIR, 'TrimmedTestScene{}_graph.json')
 
-    args.test_paths = load_txt(os.path.join(RESOURCE_DIR, 'test_task_paths.txt')).strip().split('\n')
-    args.test_paths = sorted([os.path.join(DATASET_DIR, path) for path in args.test_paths])
-    args.train_paths = load_txt(os.path.join(RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n')
-    args.train_paths = sorted([os.path.join(DATASET_DIR, path) for path in args.train_paths])
+    args.test_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'test_task_paths.txt')).strip().split('\n')
+    args.test_paths = sorted([os.path.join(args.DATASET_DIR, path) for path in args.test_paths])
+    args.train_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n')
+    args.train_paths = sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths])
 
     if args.scene_num is not None:
         # retrieve examples from specified scene
