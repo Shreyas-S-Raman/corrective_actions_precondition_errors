@@ -12,9 +12,9 @@ import pdb
 class Arguments:
 
     '''default directories storing datasets'''
-    RESOURCE_DIR = os.path.relpath() #contains allowed actions, class name equivalences, train and test tasks (txt files)
-    SCENE_DIR = os.path.relpath()
-    DATASET_DIR = os.path.relpath()
+    RESOURCE_DIR = os.path.relpath('../resources') #contains allowed actions, class name equivalences, train and test tasks (txt files)
+    SCENE_DIR = os.path.relpath('../example_graphs')
+    DATASET_DIR = os.path.relpath('../dataset')
 
     '''experiment configs'''
     debug = False
