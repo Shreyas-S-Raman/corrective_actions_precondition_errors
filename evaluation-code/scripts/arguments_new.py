@@ -29,7 +29,7 @@ class Arguments:
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
 
     '''LLM configs'''
-    use_similar_example = False
+    use_similar_example = True
     sentence_model = 'stsb-roberta-large' #use 'stsb-roberta-large' for best quality
     query_task = 'all'
 
@@ -65,7 +65,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = False
-    engine = 'davinci-codex' #to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'davinci' #to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
