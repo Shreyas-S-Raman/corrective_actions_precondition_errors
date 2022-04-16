@@ -21,10 +21,12 @@ class Arguments:
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
     fresh = False #start new experiment?
+
+    #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
     expID = 1
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
-    scene_num = None #take example train paths/tasks from specific scene [if None: uses all train paths/tasks]
+    scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
 
     '''LLM configs'''
     use_similar_example = False
@@ -56,9 +58,9 @@ class Arguments:
 
 
     '''Other configs'''
-    add_desc = False
-    iterative = True
-    raw_lm = False
+    add_desc = False #adds description for task in verbose output
+    iterative = True #calls iterative api request  if True else calls one shot api request
+    raw_lm = False #if True parses program text, if False matches program text
     seed = None #setting random seed
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
