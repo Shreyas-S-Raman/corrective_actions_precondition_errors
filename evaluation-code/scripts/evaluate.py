@@ -425,6 +425,7 @@ def transformers_engine(model_id, device):
 
 def main(args):
     # define lm used for generation
+    pdb.set_trace()
     try:
         args.engine = transformers_engine(args.engine, args.device)
     except Exception as e:
@@ -598,6 +599,7 @@ if __name__ == '__main__':
     # do not enable wandb output
     os.environ["WANDB_SILENT"] = "true"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    pdb.set_trace()
     args = get_args()
     wandb.config.update(args, allow_val_change=True)
     main(args)
