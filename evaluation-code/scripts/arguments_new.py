@@ -30,7 +30,7 @@ class Arguments:
 
     '''LLM configs'''
     use_similar_example = True
-    sentence_model = 'stsb-roberta-large' #use 'stsb-roberta-large' for best quality
+    sentence_model = 'stsb-roberta-large' #use 'stsb-roberta-large' for best quality 'roberta-base'
     query_task = 'all'
 
     example_path = None
