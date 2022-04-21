@@ -35,7 +35,7 @@ class Arguments:
 
     example_path = None
     example_id = None #selecting specific example id [example_id % num tasks] from the set of train tasks/paths
-    batch_size = 10000 #for semantic matching for sentence model
+    batch_size = 10000 #for semantic matching for sentence model [try smaller]
 
 
     '''OpenAI API configs'''
