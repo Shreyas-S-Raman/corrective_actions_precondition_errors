@@ -70,6 +70,11 @@ class Arguments:
     finetuned = False #using finetuned LLM (after pretraining)
 
 
+    '''Re prompting configs'''
+    fixed_prompt = True
+    question_prompt = False
+
+
 def get_args():
 
     parser = argparse.ArgumentParser(description='')
@@ -115,8 +120,11 @@ def get_args():
     args.save_dir = '../generated_programs'
     args.exp_path = os.path.join(args.save_dir, args.exp_name)
     args.api_save_path = os.path.join(args.exp_path, 'raw')
+    args.full_save_path = os.path.join(args.exp_path, 'full')
     args.matched_save_path = os.path.join(args.exp_path, 'matched')
+    args.full_matched_save_path = os.path.join(args.exp_path, 'full_matched')
     args.parsed_save_path = os.path.join(args.exp_path, 'parsed')
+    args.full_parsed_save_path = os.path.join(args.exp_path, 'full_parsed')
     args.init_graph_save_path = os.path.join(args.exp_path, 'init_graphs')
     args.unity_parsed_save_path = os.path.join(args.exp_path, 'unity_parsed')
     if os.path.exists(args.exp_path) and parsed_args.sweep:
