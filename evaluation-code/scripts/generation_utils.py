@@ -5,6 +5,7 @@ from enum import Enum
 import os
 import openai
 from sentence_transformers import util as st_utils
+import sys
 sys.path.append('../dataset_utils')
 from add_preconds import *
 import numpy as np
@@ -15,6 +16,8 @@ import torch
 import time
 from scene_gym import SceneGym
 from prompt_generator import PromptGenerator
+import pdb
+
 
 API_KEYS = ['PUT OPENAI KEY HERE']
 init_key_idx = np.random.randint(0, len(API_KEYS))
@@ -365,7 +368,7 @@ Note: get good video output from VH for intermediate steps and final best plan
 
 Note: class that makes it easy to try different prompting
 '''
-def online_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, verbose, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False):
+def online_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False):
 
     def _get_score(matching_score, log_prob):
         return matching_score + beta * log_prob
@@ -461,7 +464,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             error_message = f'model thinks it should terminate {generated_text}'
 
-            return best_curr, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+            return None, None, nogen_terminate, score_terminate, error_message
 
         # calculate most likely step ===================================
         '''compare best score with cutoff threshold: cutoff threshold not implemented by default
@@ -476,7 +479,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
 
-            return best_curr, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+            return None, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
         # select the previously generated output whose score is the highest
         '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
@@ -505,7 +508,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     default_params['stop'] = '\n'
 
     full_text = example + task_prompt + '\nStep 1:'
-    final_text = example + task_prompt + '\nStep 1:'
+    final_text = example + task_prompt 
 
     all_translated_actions = []
     final_translated_actions = []
@@ -513,19 +516,19 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     curr_step = 0; total_steps = 0
 
     #track errors until escape step
-    no_gen_error = None; score_error = None; parse_error = None; empty_program_error = None; precond_error = None; check_script_error = None
+    no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
     executed = True
 
-
+    #pdb.set_trace()
     while curr_step < max_steps:
 
 
         # accumulate output and continue
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(full_text, default_params, engine, max_iters, sentence_model, action_list_embedding, device, action_list, verbose)
+        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(full_text, default_params)
 
 
         #failure check 1: no_gen_terminate
-        if no_gen_terminate:
+        if nogen_terminate:
             executed = False
             no_gen_error = error_message
             break
@@ -551,7 +554,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
         else:
             matched_program_text = '\n'.join(all_translated_actions).strip()
-            program_lines, parse_info = str2program_list(matched_program_lines)
+            program_lines, parse_info = str2program_list(all_translated_actions)
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
@@ -578,7 +581,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #failure check 5: precondition error on the last action taken
         try:
 
-            preconditions = get_preconds_script(parsed_program_lines[-1], verbose=verbose).printCondsJSON()
+            preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
             precond_error = 'ScriptFail: {}'.format(e.message)
@@ -590,7 +593,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
         #take a single step/action in the VH scene
         try:
-            message, graph_dict, total_steps, prev_graph_dict, modified_script = scene_environment.step(parsed_program_lines[-1], preconditions)
+            message, graph_dict, total_steps, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
@@ -605,10 +608,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'{best_curr}\n'
+        final_text += f'{best_curr}\n' if curr_step > 1 else f'\nStep 1:{best_curr}\n'
         final_translated_actions.append(translated_action)
 
-
+    pdb.set_trace()
     info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
     'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(), 'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step}
 

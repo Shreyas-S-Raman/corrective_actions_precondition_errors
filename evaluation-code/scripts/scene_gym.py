@@ -1,3 +1,4 @@
+import sys
 sys.path.append('../simulation')
 from evolving_graph.utils import *
 from evolving_graph.environment import *
@@ -24,7 +25,7 @@ class SceneGym():
         (message, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script) = check_script(program_lines, precond, self.scene_path, inp_graph_dict=self.graph_dict, modify_graph=True, id_mapping={}, info={})
 
         #new graph dictionary is final dictionary in list of dict.
-        self.prev_graphs_stack.extend((self.steps, self.graph_dict)); self.graph_dict = graph_state_list[-1]
+        self.prev_graphs_stack.append((self.steps, self.graph_dict)); self.graph_dict = graph_state_list[-1]
 
         #update step count
         self.steps += 1
@@ -33,7 +34,7 @@ class SceneGym():
 
     def backtrack_step(self):
 
-        self.graph_dict = self.prev_graph_stack.pop()
+        self.graph_dict = self.prev_graphs_stack.pop()
 
         return self.graph_dict
 

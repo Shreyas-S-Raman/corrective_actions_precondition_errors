@@ -14,7 +14,7 @@ class Arguments:
     '''default directories storing datasets'''
     RESOURCE_DIR = os.path.relpath('../resources') #contains allowed actions, class name equivalences, train and test tasks (txt files)
     SCENE_DIR = os.path.relpath('../example_graphs')
-    DATASET_DIR = os.path.relpath('../dataset')
+    DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds')
 
     '''experiment configs'''
     debug = False
@@ -23,7 +23,7 @@ class Arguments:
     fresh = False #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1
+    expID = 3
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -42,7 +42,7 @@ class Arguments:
     api_max_tokens = 8
     api_temperature = 0.6
     api_top_p = 0.85
-    api_n = 1
+    api_n = 3
     api_logprobs = 1
     api_echo = False
     api_presence_penalty = 0.2
@@ -58,14 +58,14 @@ class Arguments:
 
 
     '''Other configs'''
-    add_desc = False #adds description for task in verbose output
+    add_desc = True #adds description for task in verbose output
     iterative = True #calls iterative api request  if True else calls one shot api request
     raw_lm = False #if True parses program text, if False matches program text
     seed = None #setting random seed
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = False
-    engine = 'davinci' #to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'gpt2' #gpt2 is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -131,8 +131,11 @@ def get_args():
         print(f'** removing previously existed sweep dir [{args.exp_path}]')
         os.system(f'rm -rf {args.exp_path}')
     os.makedirs(args.api_save_path, exist_ok=True)
+    os.makedirs(args.full_save_path, exist_ok=True)
     os.makedirs(args.matched_save_path, exist_ok=True)
+    os.makedirs(args.full_matched_save_path, exist_ok = True)
     os.makedirs(args.parsed_save_path, exist_ok=True)
+    os.makedirs(args.full_parsed_save_path, exist_ok = True)
     os.makedirs(args.init_graph_save_path, exist_ok=True)
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
     args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))

@@ -210,11 +210,11 @@ def evaluate_all_scripts(script_paths, args, evaluated_scenes=range(1, 8)):
 
     return results
 
-def generate_program(query_task_desc, example_path, scene_path, scene_num, sentence_model, action_list, action_list_embedding, generation_info, args):
-
+def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args):
+    pdb.set_trace()
     query_task, query_desc = query_task_desc
     # determine saving file name
-    info = generation_info[(query_task, query_desc, scene_num)]
+    info = generation_info[(query_task, query_desc, scene)]
     # generate from openai api ============================================
     # format prompt and query openai api
     example_str = construct_example(example_path, add_desc=args.add_desc) if not args.finetuned else ''
@@ -228,7 +228,7 @@ def generate_program(query_task_desc, example_path, scene_path, scene_num, sente
 
     if args.iterative and not args.raw_lm:
 
-        final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, args.verbose, scene_path, scene_num, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, beta=args.api_beta, raw_lm=args.raw_lm, engine=args.engine)
+        final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, verbose = args.verbose, beta=args.api_beta, engine=args.engine)
 
         task_info['script_path'] = info['parsed_save_path']
 
@@ -403,11 +403,13 @@ def evaluate_lcs_score(generation_info, verbose=False):
 
 def construct_generation_dict(args, evaluated_scenes):
     """init info dict to save relavent infos"""
+    #pdb.set_trace()
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
         for scene in evaluated_scenes:
+            #pdb.set_trace()
             lines = load_txt(test_path).strip().split('\n')
             task = lines[0]
             if args.add_desc:
@@ -427,10 +429,10 @@ def construct_generation_dict(args, evaluated_scenes):
                 generation_info[(task, desc, scene)]['gt_program_text'] = [program_text]
                 generation_info[(task, desc, scene)]['gt_program_lines'] = [program_lines]
                 # find the highest number to use as id, such that within the task, the id is unique
-                num_existing = len([_desc for (_task, _desc, _scene) in generation_info if _task == task])
+                num_existing = len([_desc for (_task, _desc, _scene) in generation_info if _task == task and _scene==scene])
                 generation_info[(task, desc, scene)]['id'] = num_existing
                 generation_info[(task, desc, scene)]['formatted_task_title'] = task.lower().strip().replace(' ', '_')
-                generation_info[(task, desc, scene)]['base_save_name'] = '{}-scene{}-{}.txt'.format(generation_info[(task, desc, scene)]['formatted_task_title'], scene, num_existing)
+                generation_info[(task, desc, scene)]['base_save_name'] = '{}-{}-scene{}.txt'.format(generation_info[(task, desc, scene)]['formatted_task_title'], num_existing, scene)
                 generation_info[(task, desc, scene)]['raw_save_path'] = os.path.join(args.api_save_path, generation_info[(task, desc, scene)]['base_save_name'])
                 generation_info[(task, desc, scene)]['full_save_path'] = os.path.join(args.full_save_path, generation_info[(task, desc, scene)]['base_save_name'])
                 generation_info[(task, desc, scene)]['matched_save_path'] = os.path.join(args.matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
@@ -451,6 +453,7 @@ def construct_generation_dict(args, evaluated_scenes):
                     generation_info[(task, desc, scene)]['gt_sketch_text'] = [sketch_text]
                     generation_info[(task, desc, scene)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
+    #pdb.set_trace()
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
     return generation_info
 
