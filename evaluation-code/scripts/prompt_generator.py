@@ -7,8 +7,8 @@ class PromptGenerator():
         self.fixed = prompt_args['fixed']
         self.question = prompt_args['question']
 
-        self.prompt_template = 'Error: {}. A corrective step would be:'
-        self.corrective_prompt = 'the task has failed'
+        self.prompt_template = 'Error: {}. A correct step would be:'
+        self.corrective_prompt = 'task failed'
 
     def _nogen_error_prompt(self, nogen_error, best_curr, translated_action):
         pass
@@ -27,7 +27,7 @@ class PromptGenerator():
     def _check_script_error_prompt(self, executability_error, best_curr, translated_action):
         pass
 
-    def generate_prompt(self, error_type, error_message, best_curr, translated_action):
+    def generate_prompt(self, error_type, error_message, step, best_curr, translated_action):
 
         #fixed corrective prompt i.e. not unique based on error type
         if self.fixed:

@@ -520,7 +520,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     executed = True
 
     #pdb.set_trace()
-    while curr_step < max_steps:
+    while curr_step < max_steps and total_steps < max_steps*2:
 
 
         # accumulate output and continue
@@ -562,7 +562,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         if parse_info['parsibility']==0:
             executed = False
             parsing_error = parse_info['parsing_error']
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
             continue
 
         parsed_program_lines = arg2abstract(program_lines)
@@ -573,7 +573,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             empty_program_error = 'Script Fail: empty program'
 
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
             continue
 
 
@@ -587,7 +587,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             precond_error = 'ScriptFail: {}'.format(e.message)
 
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
             continue
 
 
@@ -602,16 +602,16 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         if not 'is executable' in message:
             executed = False
             check_script_error = message
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
             continue
 
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'{best_curr}\n' if curr_step > 1 else f'\nStep 1:{best_curr}\n'
+        final_text += f'{best_curr}\n' if total_steps > 1 else f'\nStep 1:{best_curr}\n'
         final_translated_actions.append(translated_action)
 
-    pdb.set_trace()
+    #pdb.set_trace()
     info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
     'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(), 'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step}
 

@@ -211,7 +211,7 @@ def evaluate_all_scripts(script_paths, args, evaluated_scenes=range(1, 8)):
     return results
 
 def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args):
-    pdb.set_trace()
+    #pdb.set_trace()
     query_task, query_desc = query_task_desc
     # determine saving file name
     info = generation_info[(query_task, query_desc, scene)]
@@ -317,17 +317,22 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         # only generate program if not already exists
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
-            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
+            #pdb.set_trace()
+            try:
+                info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
+            except Exception as e:
+                print('ERROR')
+                pdb.set_trace()
             results.append(info)
         bar.update(1)
-
+    pdb.set_trace()
     return results
 
 def evaluate_lcs_score(generation_info, verbose=False):
     # evaluate lcs score for each task
     task_lcs = dict()
     task_sketch_lcs = dict()
-    for (task, desc), info in generation_info.items():
+    for (task, desc, scene), info in generation_info.items():
         try:
             program_lines = info['parsed_program_lines']
         except KeyError as e:
@@ -335,10 +340,10 @@ def evaluate_lcs_score(generation_info, verbose=False):
         # init default values
         most_similar_gt_program_text = info['gt_program_text'][0]
         most_similar_gt_sketch_text = ''
-        task_sketch_lcs[(task, desc)] = -1
+        task_sketch_lcs[(task, desc, scene)] = -1
         # if the program is empty, simply assign lcs of 0
         if len(program_lines) == 0 or (len(program_lines) == 1 and len(program_lines[0]) == 0):
-            task_lcs[(task, desc)] = 0
+            task_lcs[(task, desc, scene)] = 0
             if verbose:
                 print('*' * 10 + f' {task} ' + '*' * 10)
                 print('*' * 5 + f' program length is 0 ' + '*' * 5)
@@ -353,9 +358,9 @@ def evaluate_lcs_score(generation_info, verbose=False):
                 lcs = LCS(program_lines, gt_program_lines)
                 lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_program_lines))))
                 curr_lcs.append(lcs_score)
-            assert (task, desc) not in task_lcs
+            assert (task, desc, scene) not in task_lcs
             most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-            task_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
+            task_lcs[(task, desc, scene)] = curr_lcs[most_similar_gt_idx]
             most_similar_gt_program_text = info['gt_program_text'][most_similar_gt_idx]
             if verbose:
                 print('*' * 10 + f' {task} ' + '*' * 10)
@@ -374,7 +379,7 @@ def evaluate_lcs_score(generation_info, verbose=False):
                     lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_sketch_lines))))
                     curr_lcs.append(lcs_score)
                 most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-                task_sketch_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
+                task_sketch_lcs[(task, desc, scene)] = curr_lcs[most_similar_gt_idx]
                 most_similar_gt_sketch_text = info['gt_sketch_text'][most_similar_gt_idx]
                 if verbose:
                     print('*' * 10 + f' {task} ' + '*' * 10)
@@ -384,8 +389,8 @@ def evaluate_lcs_score(generation_info, verbose=False):
                     print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
                     print('*' * 40)
                     print()
-        info['lcs'] = task_lcs[(task, desc)]
-        info['sketch_lcs'] = task_sketch_lcs[(task, desc)]
+        info['lcs'] = task_lcs[(task, desc, scene)]
+        info['sketch_lcs'] = task_sketch_lcs[(task, desc, scene)]
         info['most_similar_gt_program_text'] = most_similar_gt_program_text
         info['most_similar_gt_sketch_text'] = most_similar_gt_sketch_text
     avg_lcs = np.mean(list(task_lcs.values()))
@@ -583,6 +588,11 @@ def main(args):
     #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
 
     execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args)
+    
+    parsed_program_paths = []
+    for k in generation_info:
+        parsed_program_paths.append(generation_info[k]['parsed_save_path'])
+
 
     # save graph and unity-modified scripts for visualization
     for r in execution_results:
