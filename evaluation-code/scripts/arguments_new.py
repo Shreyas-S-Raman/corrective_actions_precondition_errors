@@ -71,6 +71,7 @@ class Arguments:
 
 
     '''Re prompting configs'''
+    online_planning = False
     fixed_prompt = True
     question_prompt = False
 
@@ -131,11 +132,14 @@ def get_args():
         print(f'** removing previously existed sweep dir [{args.exp_path}]')
         os.system(f'rm -rf {args.exp_path}')
     os.makedirs(args.api_save_path, exist_ok=True)
-    os.makedirs(args.full_save_path, exist_ok=True)
     os.makedirs(args.matched_save_path, exist_ok=True)
-    os.makedirs(args.full_matched_save_path, exist_ok = True)
     os.makedirs(args.parsed_save_path, exist_ok=True)
-    os.makedirs(args.full_parsed_save_path, exist_ok = True)
+
+    if args.online_planning:
+        os.makedirs(args.full_matched_save_path, exist_ok = True)
+        os.makedirs(args.full_save_path, exist_ok=True)
+        os.makedirs(args.full_parsed_save_path, exist_ok = True)
+
     os.makedirs(args.init_graph_save_path, exist_ok=True)
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
     args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))
