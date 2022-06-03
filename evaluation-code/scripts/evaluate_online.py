@@ -318,11 +318,9 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             #pdb.set_trace()
-            try:
-                info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
-            except Exception as e:
-                print('ERROR')
-                pdb.set_trace()
+            
+            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
+            
             results.append(info)
         bar.update(1)
     pdb.set_trace()
@@ -464,8 +462,10 @@ def construct_generation_dict(args, evaluated_scenes):
 
 
 
-def transformers_engine(model_id, device):
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+def transformers_engine(model_id, device, seed):
+    from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
+
+    set_seed(seed)
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -476,6 +476,7 @@ def transformers_engine(model_id, device):
     def _generator(kwargs):
         input_ids = tokenizer(kwargs['prompt'], return_tensors="pt").input_ids.to(device)
         prompt_len = input_ids.shape[-1]
+        #pdb.set_trace()
         output_dict = model.generate(input_ids,
                         do_sample=True,
                         max_length=prompt_len + kwargs['max_tokens'],
@@ -530,7 +531,7 @@ def main(args):
     # define lm used for generation
     pdb.set_trace()
     try:
-        args.engine = transformers_engine(args.engine, args.device)
+        args.engine = transformers_engine(args.engine, args.device, args.seed)
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')

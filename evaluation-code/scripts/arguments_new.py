@@ -46,7 +46,7 @@ class Arguments:
     api_logprobs = 1
     api_echo = False
     api_presence_penalty = 0.2
-    api_frequency_penalty = 0.2
+    api_frequency_penalty = 0.6
     api_best_of = 1
 
     '''Codex generation params'''
@@ -61,7 +61,7 @@ class Arguments:
     add_desc = True #adds description for task in verbose output
     iterative = True #calls iterative api request  if True else calls one shot api request
     raw_lm = False #if True parses program text, if False matches program text
-    seed = None #setting random seed
+    seed = 42 #setting random seed
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = False

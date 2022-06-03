@@ -18,6 +18,7 @@ from scene_gym import SceneGym
 from prompt_generator import PromptGenerator
 import pdb
 
+np.random.seed(123)
 
 API_KEYS = ['PUT OPENAI KEY HERE']
 init_key_idx = np.random.randint(0, len(API_KEYS))

@@ -434,6 +434,7 @@ def construct_generation_dict(args):
                 generation_info[(task, desc)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
+    pdb.set_trace()
     return generation_info
 
 def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
@@ -451,8 +452,11 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
             generate_program((query_task, query_desc), example_path, sentence_model, action_list, action_list_embedding, generation_info, args)
         bar.update(1)
 
-def transformers_engine(model_id, device):
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+def transformers_engine(model_id, device, seed):
+    from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
+
+    #fixing seed for transformer + CausalLLM
+    set_seed(seed)
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -517,7 +521,7 @@ def main(args):
     # define lm used for generation
     pdb.set_trace()
     try:
-        args.engine = transformers_engine(args.engine, args.device)
+        args.engine = transformers_engine(args.engine, args.device, args.seed)
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')
