@@ -318,9 +318,9 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             #pdb.set_trace()
-            
+
             info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
-            
+
             results.append(info)
         bar.update(1)
     pdb.set_trace()
@@ -589,7 +589,7 @@ def main(args):
     #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
 
     execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args)
-    
+
     parsed_program_paths = []
     for k in generation_info:
         parsed_program_paths.append(generation_info[k]['parsed_save_path'])
@@ -647,7 +647,7 @@ def main(args):
 
     #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
     #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
-    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text']
+    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
         data_list = [task, desc, scene]
@@ -713,7 +713,7 @@ def update_info_with_execution(generation_info, execution_results):
                 info['parsing_error'] = [scene_result['parsing_error'] for scene_result in script_results.values()]
                 info['empty_program_error'] = [scene_result['empty_program_error'] for scene_result in script_results.values()]
                 info['total_steps'] = [scene_result['total_steps'] for scene_result in script_results.values()]
-
+                info['all_errors'] = [scene_result['all_errors'] for scene_result in script_results.values()]
 
     return generation_info
 

@@ -509,20 +509,21 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     default_params['stop'] = '\n'
 
     full_text = example + task_prompt + '\nStep 1:'
-    final_text = example + task_prompt 
+    final_text = example + task_prompt
 
     all_translated_actions = []
     final_translated_actions = []
 
+    all_errors = []
+
     curr_step = 0; total_steps = 0
 
-    #track errors until escape step
-    #no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
-    #executed = True
 
-    #pdb.set_trace()
+
+    #track errors until escape step
+
     while curr_step < max_steps and total_steps < max_steps*2:
-        
+
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
         executed = True
 
@@ -546,6 +547,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #add best step to plan + continue
         full_text += f'{best_curr}\n'
         all_translated_actions.append(translated_action)
+        total_steps +=1
 
 
         #check for execution/precondition errors
@@ -564,8 +566,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #failure check 3: parsing error
         if parse_info['parsibility']==0:
             executed = False
-            total_steps +=1
             parsing_error = parse_info['parsing_error']
+
+            all_errors.append(parsing_error)
             full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
             continue
 
@@ -574,10 +577,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #failure check 4: empty program error
         if len(parsed_program_lines) == 0:
             executed = False
-            total_steps += 1
             empty_program_error = 'Script Fail: empty program'
 
-
+            all_errors.append(empty_program_error)
             full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
             continue
 
@@ -589,17 +591,16 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
-            total_steps += 1
             precond_error = 'ScriptFail: {}'.format(e.message)
 
-
+            all_errors.append(precond_error)
             full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
             continue
 
 
         #take a single step/action in the VH scene
         try:
-            message, graph_dict, total_steps, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
@@ -608,12 +609,11 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         if not 'is executable' in message:
             executed = False
             check_script_error = message
+
+            all_errors.append(check_script_error)
             full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
             continue
 
-        #else:
-        #    executed = True
-        #    no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         #if all failure checks pass: then increment step
         curr_step += 1
@@ -621,9 +621,11 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         final_text += f'{best_curr}\n' if total_steps > 1 else f'\nStep 1:{best_curr}\n'
         final_translated_actions.append(translated_action)
 
-    #pdb.set_trace()
+    pdb.set_trace()
     info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(), 'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step}
+    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+    'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'all_errors': '\n'.join(all_errors)}
 
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
