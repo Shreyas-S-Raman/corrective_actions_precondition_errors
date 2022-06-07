@@ -463,7 +463,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             if verbose:
                 print(f'** model thinks it should terminate {generated_text}')
 
-            error_message = f'model thinks it should terminate {generated_text}'
+            error_message = f'No plan generated: model thinks it should terminate'
 
             return None, None, nogen_terminate, score_terminate, error_message
 
@@ -523,7 +523,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
-
+        #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
         executed = True
 
@@ -533,7 +533,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
-            executed = False
+            executed = True
             no_gen_error = error_message
             break
 
@@ -618,14 +618,14 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'{best_curr}\n' if total_steps > 1 else f'\nStep 1:{best_curr}\n'
+        final_text += f'\n{best_curr}\n' if total_steps > 1 else f'\nStep 1:{best_curr}\n'
         final_translated_actions.append(translated_action)
 
-    pdb.set_trace()
+    #pdb.set_trace()
     info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
     'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
     'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'all_errors': '\n'.join(all_errors)}
+    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
