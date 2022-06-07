@@ -231,13 +231,13 @@ def generate_program(query_task_desc, example_path, sentence_model, action_list,
                                                                     action_list, max_iters=1000, max_steps=args.api_max_steps,
                                                                     verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
                                                                     beta=args.api_beta, percent_terminate=args.api_percent_terminate,
-                                                                    engine=args.engine, translated_condition=args.translated_condition)
+                                                                    engine=args.engine, translated_condition=args.translated_condition, step_by_step = args.step_by_step)
     else:
         full_raw_text, matched_program_lines, num_steps = one_shot_api_request(example_str, task_prompt_formatted, args.api_params,
                                                                     sentence_model, action_list_embedding, args.device,
                                                                     action_list, max_iters=1000,
                                                                     beta=args.api_beta, raw_lm=args.raw_lm,
-                                                                    engine=args.engine)
+                                                                    engine=args.engine, step_by_step = args.step_by_step)
     if args.verbose:
         print('*************** RAW TEXT ***************\n{}'.format(full_raw_text))
     # save the raw output

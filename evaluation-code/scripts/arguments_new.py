@@ -74,6 +74,8 @@ class Arguments:
     online_planning = True
     fixed_prompt = True
     question_prompt = False
+    step_by_step = True #add 'Let's think step by step to prompt'
+    one_error = False
 
 
 def get_args():
