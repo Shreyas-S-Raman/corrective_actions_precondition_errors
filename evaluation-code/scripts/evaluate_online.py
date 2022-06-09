@@ -228,7 +228,7 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
 
     if args.iterative and not args.raw_lm:
 
-        if args.one_error:
+        if not args.one_error:
             final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, verbose = args.verbose, beta=args.api_beta, engine=args.engine, step_by_step = args.step_by_step)
         else:
             final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, verbose = args.verbose, beta=args.api_beta, engine=args.engine, step_by_step = args.step_by_step)

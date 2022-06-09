@@ -23,7 +23,7 @@ class Arguments:
     fresh = False #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 4
+    expID = 2
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -74,7 +74,7 @@ class Arguments:
     online_planning = True
     fixed_prompt = True
     question_prompt = False
-    step_by_step = True #add 'Let's think step by step to prompt'
+    step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
 
 

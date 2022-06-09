@@ -20,7 +20,7 @@ import pdb
 
 np.random.seed(123)
 
-API_KEYS = ['PUT OPENAI KEY HERE']
+API_KEYS = ['ENTER OPENAI API KEY HERE']
 init_key_idx = np.random.randint(0, len(API_KEYS))
 print(f'using key {init_key_idx}')
 openai.api_key = API_KEYS[init_key_idx]
@@ -241,6 +241,7 @@ def iterative_api_request(example, task_prompt, api_params, sentence_model, acti
     # stop when seeing a new line since we are generating one action per iter
     default_params['stop'] = '\n'
     full_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    #pdb.set_trace()
     all_translated_actions = []
     curr_step = 0
     while curr_step < max_steps:
@@ -785,14 +786,14 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
-
+        #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
 
         # if prev. step not executed: remove error and bad step before adding new step
         if not executed:
-            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2])
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-3]) + '\n'
             executed = True
 
 
