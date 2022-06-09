@@ -229,9 +229,13 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
     if args.iterative and not args.raw_lm:
 
         if not args.one_error:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, verbose = args.verbose, beta=args.api_beta, engine=args.engine, step_by_step = args.step_by_step)
+            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, max_steps=args.api_max_steps,
+            verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
         else:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, verbose = args.verbose, beta=args.api_beta, engine=args.engine, step_by_step = args.step_by_step)
+            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, max_steps=args.api_max_steps,
+            verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         task_info['script_path'] = info['parsed_save_path']
 

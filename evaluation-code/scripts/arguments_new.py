@@ -23,7 +23,7 @@ class Arguments:
     fresh = False #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 2
+    expID = 8
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -64,7 +64,7 @@ class Arguments:
     seed = 40 #setting random seed
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
-    translated_condition = False
+    translated_condition = True
     engine = 'gpt2' #gpt2 is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
