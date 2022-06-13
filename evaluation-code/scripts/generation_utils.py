@@ -20,7 +20,7 @@ import pdb
 
 np.random.seed(123)
 
-API_KEYS = ['ENTER OPENAI API KEY HERE']
+API_KEYS = ['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']
 init_key_idx = np.random.randint(0, len(API_KEYS))
 print(f'using key {init_key_idx}')
 openai.api_key = API_KEYS[init_key_idx]
