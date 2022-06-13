@@ -65,8 +65,8 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'davinci' #gpt2 is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
-    allow_charges = True #allow non-codex models from openai api
+    engine = 'gpt2' #gpt2 is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
 
@@ -76,6 +76,7 @@ class Arguments:
     question_prompt = False
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
+    resampling = True #promting only by resampling (next most viable step)
 
 
 def get_args():

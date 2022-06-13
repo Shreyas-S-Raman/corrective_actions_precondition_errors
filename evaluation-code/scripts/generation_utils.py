@@ -20,7 +20,7 @@ import pdb
 
 np.random.seed(123)
 
-API_KEYS = ['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']
+API_KEYS = ['ENTER API KEY HERE']
 init_key_idx = np.random.randint(0, len(API_KEYS))
 print(f'using key {init_key_idx}')
 openai.api_key = API_KEYS[init_key_idx]
@@ -904,7 +904,6 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
 
 
-
 def resampling_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
     def _get_score(matching_score, log_prob):
@@ -985,9 +984,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
                 curr_overall.append(overall_score)
 
         # stop when model thinks it's finished or format is wrong (very unlikely in practice)
-        num_to_look_at = int(percent_terminate * default_params['n'])
         '''sort the log probabilities of choices in increasing order + pick most 'k' likely as final choice for next step'''
-        highest_ids = np.argsort(curr_logprobs)[-num_to_look_at:]
+        highest_ids = np.argsort(curr_logprobs)
 
         nogen_terminate = True; score_terminate = False; error_message = None
 
@@ -1008,7 +1006,9 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
            best_idx: proposed action/step with best overall score
         '''
         highest_score = np.max(curr_overall)
-        best_idx = np.argsort(curr_overall)[-1]
+        sorted_overall = np.argsort(curr_overall)
+        best_idx = sorted_overall[-1]
+
         if cutoff_threshold != -100 and highest_score < cutoff_threshold:
             score_terminate = True
             if verbose:
@@ -1020,20 +1020,30 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         # select the previously generated output whose score is the highest
         '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
-        if translated_condition:
-            best_curr = curr_translated[best_idx]
-            best_curr = best_curr[0].upper() + best_curr[1:]
-            best_curr = best_curr.replace('_', ' ')
-            if curr_step == 0:
-                best_curr = f' {best_curr}'
+        def _get_curr(curr_translated, curr_generated, translated_condition, idx):
+            if translated_condition:
+                curr = curr_translated[idx]
+                curr = curr[0].upper() + curr[1:]
+                curr = curr.replace('_', ' ')
+                if curr_step == 0:
+                    curr = f' {curr}'
+                else:
+                    curr = f'Step {curr_step + 1}: {curr}'
             else:
-                best_curr = f'Step {curr_step + 1}: {best_curr}'
-        else:
-            best_curr = curr_generated[best_idx]
+                curr = curr_generated[idx]
+
+            return curr
+
+        best_curr = _get_curr(curr_translated, curr_generated, translated_condition, best_idx)
+
+        #store list of alternative current steps + translated steps
+        alternative_curr = [_get_curr(curr_translated, curr_generated, translated_condition, i) for i in sorted_overall]
+        alternative_translated = [curr_translated[i] for i in sorted_overall]
+
         if verbose:
             print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
 
-        return best_curr, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+        return alternative_curr, alternative_translated, nogen_terminate, score_terminate, error_message
 
 
 
@@ -1045,6 +1055,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     default_params['stop'] = '\n'
 
     full_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+
     final_text = example + task_prompt
 
     all_translated_actions = []
@@ -1052,20 +1064,28 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
     all_errors = []
 
-    curr_step = 0; total_steps = 0
-
-
+    curr_step = 0; total_steps = 0; curr_idx = 0
+    executed = True
+    pdb.set_trace()
 
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
-        executed = True
+
 
         # accumulate output and continue
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(full_text, default_params)
+        if not executed:
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
 
+        if executed or curr_idx == default_params['n']:
+            alternative_curr, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            curr_idx = 0
+
+        best_curr = alternative_curr[curr_idx]
+        translated_action = alternative_translate[curr_idx]
+        executed = True
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
@@ -1082,8 +1102,10 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         #add best step to plan + continue
         full_text += f'{best_curr}\n'
+        ongoing_text += f'{best_curr}\n'
         all_translated_actions.append(translated_action)
         total_steps +=1
+        curr_idx += 1
 
 
         #check for execution/precondition errors
@@ -1105,7 +1127,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
             continue
 
         parsed_program_lines = arg2abstract(program_lines)
@@ -1116,7 +1137,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
             continue
 
 
@@ -1130,7 +1150,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
             continue
 
 
@@ -1147,7 +1166,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             check_script_error = message
 
             all_errors.append(check_script_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
             continue
 
 
@@ -1165,6 +1183,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
+
+
 
 
 
