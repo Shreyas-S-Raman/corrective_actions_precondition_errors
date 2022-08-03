@@ -169,8 +169,8 @@ fabric.properties
 test*/
 test*.py
 data/*
-dataset/programs_processed_precond_nograb_morepreconds
+evaluation-code/dataset/programs_processed_precond_nograb_morepreconds
 *wandb*
 docker*
 .dockerignore
-generated_programs/*
+evaluation-code/generated_programs/*

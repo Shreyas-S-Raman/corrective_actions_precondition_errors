@@ -547,7 +547,7 @@ def main(args):
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')
-        if not 'codex' in args.engine:
+        if not 'codex' and not 'code' in args.engine:
             assert args.allow_charges
     start = time.time()
     if args.skip_load and not args.use_similar_example:

@@ -9,7 +9,7 @@ from evolving_graph.execution import SitExecutor, LieExecutor
 
 
 random.seed(123)
-
+np.random.seed(123)
 
 def load_graph(file_name):
     with open(file_name) as f:

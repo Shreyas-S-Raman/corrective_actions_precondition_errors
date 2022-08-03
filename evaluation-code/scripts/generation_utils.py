@@ -20,7 +20,9 @@ import pdb
 
 np.random.seed(123)
 
-API_KEYS = ['ENTER API KEY HERE']
+API_KEYS = ['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']
+#API_KEYS = ['ENTER API KEYS']
+
 init_key_idx = np.random.randint(0, len(API_KEYS))
 print(f'using key {init_key_idx}')
 openai.api_key = API_KEYS[init_key_idx]
@@ -1037,8 +1039,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         best_curr = _get_curr(curr_translated, curr_generated, translated_condition, best_idx)
 
         #store list of alternative current steps + translated steps
-        alternative_curr = [_get_curr(curr_translated, curr_generated, translated_condition, i) for i in sorted_overall]
-        alternative_translated = [curr_translated[i] for i in sorted_overall]
+        alternative_curr = [_get_curr(curr_translated, curr_generated, translated_condition, i) for i in reversed(sorted_overall)]
+        alternative_translated = [curr_translated[i] for i in reversed(sorted_overall)]
 
         if verbose:
             print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
@@ -1066,7 +1068,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
     curr_step = 0; total_steps = 0; curr_idx = 0
     executed = True
-    pdb.set_trace()
+    #pdb.set_trace()
 
     #track errors until escape step
 
@@ -1079,26 +1081,29 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         if not executed:
             ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
 
-        if executed or curr_idx == default_params['n']:
+        if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
             alternative_curr, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
             curr_idx = 0
 
-        best_curr = alternative_curr[curr_idx]
-        translated_action = alternative_translate[curr_idx]
-        executed = True
+        #best_curr = alternative_curr[curr_idx]
+        #translated_action = alternative_translate[curr_idx]
+        #executed = True
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
-            executed = True
+            executed = True if total_steps > 0 else False
             no_gen_error = error_message
             break
 
         #failure check 2: score terminate
         if score_terminate:
-            executed = True
+            executed = True if total_steps > 0 else False
             score_error = error_message
             break
 
+        best_curr = alternative_curr[curr_idx]
+        translated_action = alternative_translate[curr_idx]
+        executed = True
 
         #add best step to plan + continue
         full_text += f'{best_curr}\n'
@@ -1176,10 +1181,14 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         final_translated_actions.append(translated_action)
 
     #pdb.set_trace()
-    info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
-    'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+    if total_steps==0:
+        info = {'parsed_program': None, 'executed': executed, 'scene_path': scene_path, 'init_graph_dict': scene_environment.initial_graph_dict,'modified_program': None,'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error': empty_program_error, 'total_steps':total_steps, 'final_steps': curr_step, 'no_gen_error': no_gen_error, 'score_error':score_error, 'all_errors': '\n'.join(all_errors)}
+
+    else:
+        info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+        'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info

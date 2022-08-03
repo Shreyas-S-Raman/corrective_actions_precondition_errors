@@ -400,6 +400,7 @@ def construct_generation_dict(args):
             desc = lines[1]
         else:
             desc = ''
+        
         program_lines = lines[4:]
         program_text = '\n'.join(program_lines).strip()
         # init the dict for each program
@@ -525,7 +526,7 @@ def main(args):
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')
-        if not 'codex' in args.engine:
+        if not 'codex' and not 'code' in args.engine:
             assert args.allow_charges
     start = time.time()
     if args.skip_load and not args.use_similar_example:
@@ -595,21 +596,21 @@ def main(args):
     # log executability
     percent_executed = sum([r['executed'] for r in execution_results]) / len(execution_results)
     wandb.run.summary["percent_executed"] = percent_executed
-    print('** percent_executed: {:.2f}'.format(percent_executed))
+    print('** percent_executed: {:.4f}'.format(percent_executed))
     # evaluate lcs score
     avg_lcs, avg_sketch_lcs = evaluate_lcs_score(generation_info, verbose=False)
     wandb.run.summary["avg_lcs"] = avg_lcs
-    print('** avg_lcs: {:.2f}'.format(avg_lcs))
+    print('** avg_lcs: {:.4f}'.format(avg_lcs))
     wandb.run.summary["avg_sketch_lcs"] = avg_sketch_lcs
-    print('** avg_sketch_lcs: {:.2f}'.format(avg_sketch_lcs))
+    print('** avg_sketch_lcs: {:.4f}'.format(avg_sketch_lcs))
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
     wandb.run.summary['avg_parsed_length'] = avg_parsed_length
-    print('** avg_parsed_length: {:.2f}'.format(avg_parsed_length))
+    print('** avg_parsed_length: {:.4f}'.format(avg_parsed_length))
     # get average parsibility
     avg_parsibility = np.mean([info['parsibility'] for info in generation_info.values()])
     wandb.run.summary['avg_parsibility'] = avg_parsibility
-    print('** avg_parsibility: {:.2f}'.format(avg_parsibility))
+    print('** avg_parsibility: {:.4f}'.format(avg_parsibility))
     # get normalized overall score for hparam sweep ranking
     normalized_exec = normalize(percent_executed, min_v=.09, max_v=.88)
     normalized_lcs = normalize(avg_lcs, min_v=.10, max_v=.24)
@@ -617,9 +618,9 @@ def main(args):
     wandb.run.summary['normalized_exec'] = normalized_exec
     wandb.run.summary['normalized_lcs'] = normalized_lcs
     wandb.run.summary['overall_score'] = overall_score
-    print('** normalized_exec: {:.2f}'.format(normalized_exec))
-    print('** normalized_lcs: {:.2f}'.format(normalized_lcs))
-    print('** overall_score: {:.2f}'.format(overall_score))
+    print('** normalized_exec: {:.4f}'.format(normalized_exec))
+    print('** normalized_lcs: {:.4f}'.format(normalized_lcs))
+    print('** overall_score: {:.4f}'.format(overall_score))
 
     # log generation info
     generation_info = update_info_with_execution(generation_info, execution_results)

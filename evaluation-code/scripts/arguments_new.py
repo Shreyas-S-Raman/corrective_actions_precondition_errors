@@ -20,10 +20,10 @@ class Arguments:
     debug = False
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
-    fresh = False #start new experiment?
+    fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 13
+    expID =108
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -35,44 +35,44 @@ class Arguments:
 
     example_path = None
     example_id = None #selecting specific example id [example_id % num tasks] from the set of train tasks/paths
-    batch_size = 10000 #for semantic matching for sentence model [try smaller]
+    batch_size = 10000 #original: 10k; for semantic matching for sentence model [try smaller]
 
 
     '''OpenAI API configs'''
-    api_max_tokens = 8
-    api_temperature = 0.6
-    api_top_p = 0.85
-    api_n = 3
+    api_max_tokens = 10
+    api_temperature = 0.7 #0.3 default
+    api_top_p = 0.9
+    api_n = 10
     api_logprobs = 1
     api_echo = False
-    api_presence_penalty = 0.2
-    api_frequency_penalty = 0.6
+    api_presence_penalty = 0.9
+    api_frequency_penalty = 0.3 #original: 0.3
     api_best_of = 1
 
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = -100
-    api_beta = 0.2
-    api_percent_terminate = 0.2
+    api_cutoff_threshold = 0.8
+    api_beta = 0.3
+    api_percent_terminate = 0.5
 
 
     '''Other configs'''
     add_desc = False #adds description for task in verbose output
     iterative = True #calls iterative api request  if True else calls one shot api request
     raw_lm = False #if True parses program text, if False matches program text
-    seed = 40 #setting random seed
+    seed = 4562 #setting random seed
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'gpt2' #gpt2 is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
-    allow_charges = False #allow non-codex models from openai api
+    engine = 'code-davinci-002' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    allow_charges = True #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
 
     '''Re prompting configs'''
     online_planning = True
-    fixed_prompt = True
+    fixed_prompt = False
     question_prompt = False
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
@@ -201,7 +201,8 @@ def get_args():
             "presence_penalty": args.api_presence_penalty,
             "frequency_penalty": args.api_frequency_penalty,
             # "best_of": args.api_best_of,
-            "stop": '\n'
+            "stop": '\n',
+            "seed": args.seed
         }
 
 
