@@ -1,0 +1,49 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+    <div>
+        <h4>Instructions: determine whether the task could be completed by following the steps shown.</h4>
+        <p>In other words, can the task be hypothetically broken down into those steps?</p>
+        <p>Please note that if the steps simply re-state the task, then steps can not be used to complete the task.</p>
+    </div>
+
+    <!-- The crowd-classifier element will create a tool for the Worker to select the
+           correct answer to your question -->
+    <crowd-classifier
+      name="Classification"
+      categories="['yes', 'no']"
+      header="Scroll down to click the submit button."
+    >
+
+      <classification-target>
+        <!-- The text you want classified will be substituted for the "text" variable when you
+               publish a batch with a CSV input file containing multiple text items  -->
+        <b>${task}</b>
+        ${steps}
+      </classification-target>
+
+     <!-- Use the short-instructions section for quick instructions that the Worker
+            will see while working on the task. Including some basic examples of
+            good and bad answers here can help get good results. You can include
+            any HTML here. -->
+      <short-instructions>
+
+      </short-instructions>
+          <div css='visibility:hidden'>
+          ${id}
+      </div>
+
+      <!-- Use the full-instructions section for more detailed instructions that the
+            Worker can open while working on the task. Including more detailed
+            instructions and additional examples of good and bad answers here can
+            help get good results. You can include any HTML here. -->
+      <full-instructions header="">
+      </full-instructions>
+
+    </crowd-classifier>
+</crowd-form>
