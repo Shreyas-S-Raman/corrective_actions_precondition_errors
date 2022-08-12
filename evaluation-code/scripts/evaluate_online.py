@@ -657,8 +657,7 @@ def main(args):
     # log generation info
     generation_info = update_info_with_execution(generation_info, execution_results)
 
-    #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
-    #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
+    
     summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
@@ -713,21 +712,27 @@ def update_info_with_execution(generation_info, execution_results):
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
 
     for (task, desc, scene), info in generation_info.items():
         for script_path, script_results in script2results.items():
             if info['parsed_save_path'] == script_path:
                 info['scene_nums'] = [scene_num for scene_num in script_results.keys()]
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
+
+                # log the error information for execution across scenes
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]
                 info['precond_error'] = [scene_result['precond_error'] for scene_result in script_results.values()]
                 info['parsing_error'] = [scene_result['parsing_error'] for scene_result in script_results.values()]
                 info['empty_program_error'] = [scene_result['empty_program_error'] for scene_result in script_results.values()]
-                info['total_steps'] = [scene_result['total_steps'] for scene_result in script_results.values()]
                 info['no_gen_error'] = [scene_result['no_gen_error'] for scene_result in script_results.values()]
                 info['score_error'] = [scene_result['score_error'] for scene_result in script_results.values()]
                 info['all_errors'] = [scene_result['all_errors'] for scene_result in script_results.values()]
+
+                # log the step information for execution across scenes
+                info['total_steps'] = [scene_result['total_steps'] for scene_result in script_results.values()]
+                info['final_steps'] = [scene_result['final_steps'] for scene_result in script_results.values()]
+                
 
     return generation_info
 

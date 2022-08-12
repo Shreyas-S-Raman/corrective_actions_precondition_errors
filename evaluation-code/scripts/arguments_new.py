@@ -72,8 +72,11 @@ class Arguments:
 
     '''Re prompting configs'''
     online_planning = True
-    fixed_prompt = False
-    question_prompt = False
+    
+    prompt_template = 1
+    error_information = 'notion'
+    suggestion_no = 1
+
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
     resampling = True #promting only by resampling (next most viable step)
