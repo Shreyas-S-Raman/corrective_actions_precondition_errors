@@ -332,10 +332,9 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
             #pdb.set_trace()
 
             info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
-
             results.append(info)
         bar.update(1)
-    pdb.set_trace()
+    #pdb.set_trace()
     return results
 
 def evaluate_lcs_score(generation_info, verbose=False):
@@ -422,7 +421,7 @@ def construct_generation_dict(args, evaluated_scenes):
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     # iterate through all test programs and save the ground truth for later evaluation
-    for test_path in args.test_paths:
+    for test_path in args.test_paths[:2]:
         for scene in evaluated_scenes:
             #pdb.set_trace()
             lines = load_txt(test_path).strip().split('\n')
@@ -654,10 +653,11 @@ def main(args):
     print('** normalized_lcs: {:.2f}'.format(normalized_lcs))
     print('** overall_score: {:.2f}'.format(overall_score))
 
+    #pdb.set_trace()
     # log generation info
     generation_info = update_info_with_execution(generation_info, execution_results)
 
-    
+    #pdb.set_trace() 
     summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
@@ -681,6 +681,7 @@ def main(args):
             data_list.append(curr_value)
         table_data.append(data_list)
 
+    #pdb.set_trace()
     # construct table and log to wandb
     table = wandb.Table(data=table_data, columns=summary_keys)
     wandb.run.summary["execution_infos"] = table

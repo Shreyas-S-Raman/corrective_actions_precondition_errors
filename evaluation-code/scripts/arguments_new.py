@@ -23,7 +23,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID =118
+    expID = 121
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -65,7 +65,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'davinci-instruct-beta' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'code-davinci-002' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -76,11 +76,13 @@ class Arguments:
     prompt_template = 1
     error_information = 'notion'
     suggestion_no = 1
+    
+    fixed_prompt = True
+    question_prompt = False
 
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
     resampling = True #promting only by resampling (next most viable step)
-
 
 def get_args():
 
