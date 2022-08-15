@@ -19,9 +19,12 @@ class ExecutionInfo(object):
 
     def error(self, msg: str, err_type:str, error_params):
         self.messages.append(msg.format(*tuple(error_params.values())[:-1]) + ' when executing "' + self.current_line_info() + '"')
-        pdb.set_trace()
+        
 
-         
+        for k in error_params:
+            error_params[k] = '{}'.format(*tuple(error_params[k]))
+        
+        pdb.set_trace()
         error_params['type'] = err_type
         self.message_params.append(error_params)
 
