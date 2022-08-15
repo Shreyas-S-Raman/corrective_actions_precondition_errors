@@ -12,7 +12,7 @@ import evolving_graph.utils as utils
 from evolving_graph.scripts import read_script, read_script_from_string, read_script_from_list_string, ScriptParseException
 from evolving_graph.execution import ScriptExecutor
 from evolving_graph.environment import EnvironmentGraph
-
+import pdb
 
 random.seed(123)
 np.random.seed(123)
@@ -210,11 +210,12 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     if executable:
         message = 'Script is executable'
     else:
+        pdb.set_trace()
         message = 'Script is not executable, since {}'.format(executor.info.get_error_string())
 
     #extract + return the parameters used to generate the error
     error_parameters = executor.info.get_error_params()
-
+    
     return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
@@ -232,11 +233,11 @@ def check_script(program_str, precond, graph_path, inp_graph_dict=None,
         graph_dict = utils.load_graph_dict(graph_path)
     else:
         graph_dict = inp_graph_dict
-    message, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
+    message,message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
         helper, script, precond, graph_dict, w_graph_list=True, modify_graph=modify_graph,
         id_mapping=id_mapping, place_other_objects=False, **info)
 
-    return message, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
+    return message, message_params, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
 
 
 def check_original_script(inp):
@@ -261,11 +262,11 @@ def check_original_script(inp):
 
     precond = json.load(open(precond_path))
 
-    message, executable, _, graph_state_list, id_mapping, _, _ = check_one_program(helper, script, precond, graph_dict, w_graph_list=True)
+    message, message_params, executable, _, graph_state_list, id_mapping, _, _ = check_one_program(helper, script, precond, graph_dict, w_graph_list=True)
     if executable and dump:
         dump_one_data(txt_file, script, graph_state_list, id_mapping, graph_path)
 
-    return script, message, executable, graph_state_list, id_mapping
+    return script, message, message_params, executable, graph_state_list, id_mapping
 
 
 def modify_objects_unity2script(helper, script=[], precond=[]):

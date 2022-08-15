@@ -1,3 +1,4 @@
+import pdb
 import time
 import queue
 from typing import Optional
@@ -16,11 +17,13 @@ class ExecutionInfo(object):
         self.message_params = []
         self.current_line = None
 
-    def error(self, msg: str, err_type:str, **kwargs):
-        self.messages.append(msg.format(*tuple(kwargs.values()[:-1])) + ' when executing "' + self.current_line_info() + '"')
+    def error(self, msg: str, err_type:str, error_params):
+        self.messages.append(msg.format(*tuple(error_params.values())[:-1]) + ' when executing "' + self.current_line_info() + '"')
+        pdb.set_trace()
 
-        kwargs['type'] = err_type
-        self.message_params.append(kwargs)
+         
+        error_params['type'] = err_type
+        self.message_params.append(error_params)
 
 
     def set_current_line(self, sl: ScriptLine):
