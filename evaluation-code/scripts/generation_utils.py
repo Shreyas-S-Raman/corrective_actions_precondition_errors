@@ -508,7 +508,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     # stop when seeing a new line since we are generating one action per iter
     default_params['stop'] = '\n'
 
-    full_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
     final_text = example + task_prompt
 
     all_translated_actions = []
@@ -545,7 +545,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
 
         #add best step to plan + continue
-        full_text += f'{best_curr}\n'
+        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
         all_translated_actions.append(translated_action)
         total_steps +=1
 
@@ -563,16 +563,17 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
+        parsed_program_lines = arg2abstract(program_lines)
+
         #failure check 3: parsing error
         if parse_info['parsibility']==0:
             executed = False
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
             continue
 
-        parsed_program_lines = arg2abstract(program_lines)
 
         #failure check 4: empty program error
         if len(parsed_program_lines) == 0:
@@ -580,7 +581,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
             continue
 
 
@@ -594,13 +595,13 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
+            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
             continue
 
 
         #take a single step/action in the VH scene
         try:
-            message, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
@@ -618,7 +619,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'\n{best_curr}' if total_steps > 1 else f'\nStep 1:{best_curr}'
+        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
         final_translated_actions.append(translated_action)
 
     #pdb.set_trace()
@@ -769,7 +770,8 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     # stop when seeing a new line since we are generating one action per iter
     default_params['stop'] = '\n'
 
-    full_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
+
     ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
     final_text = example + task_prompt
 
@@ -810,8 +812,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
         #add best step to plan + continue
+        
+        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
         ongoing_text += f'{best_curr}\n'
-        full_text += f'{best_curr}\n'
+
         all_translated_actions.append(translated_action)
         total_steps +=1
 
@@ -848,9 +852,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
+            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action)
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
-            ongoing_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action))
+            full_text += '{}\n'.format(error_prompt)
+            ongoing_text += '{}\n'.format(error_prompt)
 
             continue
 
@@ -866,8 +871,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             all_errors.append(precond_error)
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
-            ongoing_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action))
+            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action)
+
+            full_text += '{}\n'.format(error_prompt)
+            ongoing_text += '{}\n'.format(error_prompt)
             continue
 
 
@@ -885,15 +892,17 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             all_errors.append(check_script_error)
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
-            ongoing_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action)
+
+            full_text += '{}\n'.format(error_prompt)
+            ongoing_text += '{}\n'.format(error_prompt)
             continue
 
 
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'\n{best_curr}' if total_steps > 1 else f'\nStep 1:{best_curr}'
+        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
         final_translated_actions.append(translated_action)
 
     #pdb.set_trace()
@@ -906,7 +915,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
 
 
-def resampling_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
+def resampling_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
     def _get_score(matching_score, log_prob):
         return matching_score + beta * log_prob
@@ -1108,6 +1117,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         #add best step to plan + continue
         full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
         ongoing_text += f'{best_curr}\n'
+
         all_translated_actions.append(translated_action)
         total_steps +=1
         curr_idx += 1

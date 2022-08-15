@@ -212,7 +212,10 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     else:
         message = 'Script is not executable, since {}'.format(executor.info.get_error_string())
 
-    return message, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
+    #extract + return the parameters used to generate the error
+    error_parameters = executor.info.get_error_params()
+
+    return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
 def check_script(program_str, precond, graph_path, inp_graph_dict=None, 

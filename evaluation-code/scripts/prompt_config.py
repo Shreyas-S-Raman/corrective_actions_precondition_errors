@@ -4,21 +4,43 @@ PROMPT_TEMPLATE_2 = 'Error: {}. Generate a list of reasons why:'
 PROMPT_TEMPLATE_3 = 'Step failed. {}. {}'
 PROMPT_TEMPLATE_4 = 'Step failed. {}. Generate a list of reasons why:'
 
-prompt_templates = {1:PROMPT_TEMPLATE_1, 2:PROMPT_TEMPLATE_2, 3:PROMPT_TEMPLATE_3, 4:PROMPT_TEMPLATE_4}
+prompt_templates = {1:(PROMPT_TEMPLATE_1,2), 2:(PROMPT_TEMPLATE_2,1), 3:(PROMPT_TEMPLATE_3,2), 4:(PROMPT_TEMPLATE_4,1)}
 
 #information about 'existence' of error i.e. an error occured
 ERROR_NOTION = 'Task failed'
 
 #information objects related to error w/o state i.e. error occured with {object}
-ERROR_INFERENCE = 'I cannot {} {}'
+ERROR_INFERENCE_1 = 'I cannot {}'
+ERROR_INFERENCE_2 = 'I cannot {} the {}'
 
 #information about the "state" of objects related to error e.g. error occured with {object} because {reason}
-ERROR_CAUSE = '{}'
+ERROR_CAUSE_1 = '{}'
+ERROR_CAUSE_2 = 'I cannot {} the {} because {}'
 
-error_provided = {'notion':ERROR_NOTION, 'inference':ERROR_INFERENCE, 'cause':ERROR_CAUSE}
+error_provided = {'notion':ERROR_NOTION, 'inference_1':ERROR_INFERENCE_1, 'inference_2': ERROR_INFERENCE_2, 'cause_1':ERROR_CAUSE_1, 'cause_2':ERROR_CAUSE_2}
 
 SUGGESTION_1 = 'A correct step would be:'
 SUGGESTION_2 = 'Therefore, a correct step would be:'
 SUGGESTION_3 = 'Next time you should:'
 
 suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3}
+
+
+
+'''
+Prompts for specific error causes
+'''
+
+# agent over-occupied error
+
+# agent proximity error
+
+# agent facing wrong direction error
+
+# agent not holding object error
+
+# object inside closed structure error
+
+# invalid action error
+
+# repeated action on boolean state error

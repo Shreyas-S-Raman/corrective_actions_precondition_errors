@@ -74,11 +74,9 @@ class Arguments:
     online_planning = True
     
     prompt_template = 1
+    custom_cause = False
     error_information = 'notion'
     suggestion_no = 1
-    
-    fixed_prompt = True
-    question_prompt = False
 
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False
