@@ -7,7 +7,7 @@ PROMPT_TEMPLATE_4 = 'Step failed. {}. Generate a list of reasons why:'
 prompt_templates = {1:(PROMPT_TEMPLATE_1,2), 2:(PROMPT_TEMPLATE_2,1), 3:(PROMPT_TEMPLATE_3,2), 4:(PROMPT_TEMPLATE_4,1)}
 
 #information about 'existence' of error i.e. an error occured
-ERROR_NOTION = 'Task failed'
+ERROR_NOTION_1 = 'Task failed'
 
 #information objects related to error w/o state i.e. error occured with {object}
 ERROR_INFERENCE_1 = 'I cannot {}'
