@@ -42,12 +42,12 @@ class Arguments:
     '''OpenAI API configs'''
     api_max_tokens = 10
     
-    api_temperature = 0.7 #0.3 default
+    api_temperature = 0.5 #0.3 default
     api_top_p = 0.9
     api_n = 10
     api_logprobs = 1
     api_echo = False
-    api_presence_penalty = 0.5
+    api_presence_penalty = 0.7
     api_frequency_penalty = 0.3 #original: 0.3
     api_best_of = 1
 
@@ -76,7 +76,7 @@ class Arguments:
     online_planning = True
     
     prompt_template = 1
-    custom_cause = False
+    custom_cause = True
     third_person = False
     error_information = 'notion'
     suggestion_no = 1
@@ -101,8 +101,8 @@ class Arguments:
 
 
     step_by_step = False #add 'Let's think step by step to prompt'
-    one_error = False
-    resampling = True #promting only by resampling (next most viable step)
+    one_error = True
+    resampling = False #promting only by resampling (next most viable step)
 
 def get_args():
 

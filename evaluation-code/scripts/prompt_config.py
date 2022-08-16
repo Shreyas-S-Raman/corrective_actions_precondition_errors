@@ -17,7 +17,7 @@ ERROR_INFERENCE_2 = 'I cannot {} the {}'
 ERROR_CAUSE_1 = '{}'
 ERROR_CAUSE_2 = 'I cannot {} the {} because {}'
 
-error_provided = {'notion':ERROR_NOTION, 'inference_1':ERROR_INFERENCE_1, 'inference_2': ERROR_INFERENCE_2, 'cause_1':ERROR_CAUSE_1, 'cause_2':ERROR_CAUSE_2}
+error_provided = {'notion':ERROR_NOTION_1, 'inference_1':ERROR_INFERENCE_1, 'inference_2': ERROR_INFERENCE_2, 'cause_1':ERROR_CAUSE_1, 'cause_2':ERROR_CAUSE_2}
 
 SUGGESTION_1 = 'A correct step would be:'
 SUGGESTION_2 = 'Therefore, a correct step would be:'
