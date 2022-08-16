@@ -5,8 +5,10 @@ import re
 
 class ErrorParsing():
 
-    def __init__(self, custom_cause):
+    def __init__(self, custom_cause, third_person, chosen_causal_reprompts):
         self.custom_cause = custom_cause
+        self.third_person = third_person
+        self.causal_reprompts = chosen_causal_reprompts
 
     def _get_action_and_objs(self, block_str):
         """ Given a str block [Rinse] <CLEANING SOLUTION> (1)
@@ -20,9 +22,9 @@ class ErrorParsing():
         
         return action, obj_names[0]
     
-    def _get_error_reason(self, error_message, error_cause, obj, action):
+    def _get_error_reason(self, error_message, error_cause, error_params, obj, action):
 
-        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, obj, action)
+        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params, obj, action)
     
     def _parse_precond_error(self, error_message, obj, action):
 
@@ -33,7 +35,13 @@ class ErrorParsing():
         else: 
             return '{} is already {}'.format(obj, unflipped_state[action.upper()])
         
-    def _parse_execution_error(self, error_message, obj, action):
+    def _parse_execution_error(self, error_message, error_params, obj, action):
+
+        #add missing arguments to error parameters
+        if 'obj' not in error_params:
+            error_params['obj'] = obj
+        if 'action' not in error_params:
+            error_params['action'] = action
         
         if not self.custom_cause:
 
@@ -55,35 +63,38 @@ class ErrorParsing():
             #remove extra spaces caused by earlier replacements
             error_message = error_message.replace('  ', ' ')
             error_message = error_message.replace('executing', 'trying to')
+
+            if not self.third_person:
+                error_message = error_message.replace('character', 'I')
             
             return error_message.strip().lower()
 
-        elif 'does not have a free hand' in error_message:
-            return 'I cannot {} {}. My hands are full'.format(action, obj)
-        
-        elif 'is not close to' in error_message:
-            return 'I am not near the {}'.format(obj)
-        
-        elif 'does not face' in error_message:
-            return 'I am not facing the {}'.format(obj)
-        
-        elif 'not holding' or 'not grabbed' in error_message:
-            return 'I don\'t have the {}'.format(obj)
-
-        elif 'inside another closed thing' in error_message:
-            return 'the {} is inside something'.format(obj)
-        
-        elif 'is sitting' in error_message:
-            return 'I am sitting'
-        
-        elif 'Door(s)' in error_message:
-            return 'The door to {} is closed'.format(obj)
-        
-        elif 'is not' in error_message:
-            return '{} {} is not allowed'.format(action, obj)
-        
         else:
-            return 'I cannot {} {}'.format(action, obj)
+
+            #fetching the desired reprompt format for the error type along with parameter data for the reprompt
+            [reprompt_format, reprompt_params] = self.causal_reprompts[error_params['type']]
+
+
+            reprompt_params = list(map(lambda x: self._format_error_param(error_params[x]), reprompt_params))
+
+            return reprompt_format.format(*reprompt_params)
+    
+    def _format_error_param(self, error_param:str):
+        error_param = error_param.replace('[','').replace(']','')
+        error_param = error_param.replace('(','').replace(')','')
+        error_param = error_param.replace('_','')
+        error_param = re.sub('\d','',error_param)
+        #remove extra spaces caused by earlier replacements
+        error_param = error_param.replace(' ','')
+
+        if error_param is 'character':
+            error_param = error_param + 'is' if self.third_person else 'I am'
+        
+        return error_param.strip().lower()
+
+                
+
+            
 
 
 class PromptGenerator():
@@ -97,7 +108,7 @@ class PromptGenerator():
         self.error_info_type = prompt_args['error_information']
         self.suggestion = suggestion_provided[prompt_args['suggestion_no']]
 
-        self.error_parser = ErrorParsing(prompt_args['custom_cause'])
+        self.error_parser = ErrorParsing(prompt_args['custom_cause'], prompt_args['third_person'], prompt_args['chosen_causal_reprompts'])
 
     
     def _create_inference2_prompt(self, **kwargs):
@@ -124,7 +135,7 @@ class PromptGenerator():
         pass
 
 
-    def generate_prompt(self, error_type, error_message, step, best_curr, program_line):
+    def generate_prompt(self, error_type, error_message, step, best_curr, program_line, *args):
 
         generator_functions = {'inference_1': self._create_inference1_prompt, 'inference_2': self._create_inference2_prompt, 
         'notion': self._create_notion_prompt,
@@ -144,13 +155,15 @@ class PromptGenerator():
             error_info = self._create_parsibility_prompt()
         else:
             #extract the cause for the error
-            error_cause = self.error_parser._get_error_reason(error_message, error_type, obj, action)
+            error_cause = self.error_parser._get_error_reason(error_message, error_type, args, obj, action)
 
             error_info = generator_functions[self.error_info_type]({'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
 
 
-        #format the final error prompt template
-        
+        #format the final error prompt template: output varies based on prompt inserts
+        return self.prompt_template.format(*[error_info, self.suggestion])
+       
+
 
 
        

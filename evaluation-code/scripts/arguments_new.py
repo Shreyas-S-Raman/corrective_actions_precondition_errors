@@ -2,6 +2,7 @@ import argparse
 import glob
 import os
 from vh_configs import *
+from prompt_config import CausalErrors
 import torch
 import numpy as np
 import wandb
@@ -40,6 +41,7 @@ class Arguments:
 
     '''OpenAI API configs'''
     api_max_tokens = 10
+    
     api_temperature = 0.7 #0.3 default
     api_top_p = 0.9
     api_n = 10
@@ -75,8 +77,28 @@ class Arguments:
     
     prompt_template = 1
     custom_cause = False
+    third_person = False
     error_information = 'notion'
     suggestion_no = 1
+
+    chosen_causal_reprompts = {
+        'internally_contained': CausalErrors.INTERNALLY_CONTAINED1,
+        'unflipped_boolean_state': CausalErrors.UNFLIPPED_BOOL_STATE1,
+        'hands_full': CausalErrors.HANDS_FULL1,
+        'already_sitting': CausalErrors.ALREADY_SITTING1,
+        'no_path': CausalErrors.NO_PATH1,
+        'door_closed':CausalErrors.DOOR_CLOSED1,
+        'proximity':CausalErrors.PROXIMITY1,
+        'not_find': CausalErrors.NOT_FIND1,
+        'invalid_action':CausalErrors.INVALID_ACTION1,
+        'max_occupancy':CausalErrors.MAX_OCCUPANCY1,
+        'not_holding':CausalErrors.NOT_HOLDING1,
+        'not_holding_any':CausalErrors.NOT_HOLDING_ANY1,
+        'not_facing':CausalErrors.NOT_FACING1,
+        'missing_step':CausalErrors.MISSING_STEP1,
+        'invalid_room':CausalErrors.INVALID_ROOM1
+    }
+
 
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = False

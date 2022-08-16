@@ -210,7 +210,6 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     if executable:
         message = 'Script is executable'
     else:
-        pdb.set_trace()
         message = 'Script is not executable, since {}'.format(executor.info.get_error_string())
 
     #extract + return the parameters used to generate the error

@@ -20,11 +20,11 @@ class ExecutionInfo(object):
     def error(self, msg: str, err_type:str, error_params):
         self.messages.append(msg.format(*tuple(error_params.values())[:-1]) + ' when executing "' + self.current_line_info() + '"')
         
-        pdb.set_trace()
+        
         for k in error_params:
             error_params[k] = '{}'.format(*(error_params[k],))
         
-        pdb.set_trace()
+        
         error_params['type'] = err_type
         self.message_params.append(error_params)
 
@@ -449,7 +449,7 @@ def _check_puttable(state: EnvironmentState, src_node: GraphNode, dest_node: Gra
         if Property.CAN_OPEN not in dest_node.properties or State.OPEN in dest_node.states:
             return True
         else:
-            info.error('{} is not open or is not openable', 'invalid_action', {'obj' : dest_node, 'subtype':'is not openable'})
+            info.error('{} is not open or is not openable', 'invalid_action', {'obj' : dest_node, 'subtype': 'is not openable'})
             return False
     return True
 

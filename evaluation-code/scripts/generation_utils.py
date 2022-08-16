@@ -571,7 +571,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
+
+            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+
+            full_text += '{}\n'.format(error_prompt)
             continue
 
 
@@ -581,7 +584,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
+
+            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+
+            full_text += '{}\n'.format(error_prompt)
             continue
 
 
@@ -595,7 +601,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action, parsed_program_lines[-1]))
+
+            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+
+            full_text += '{}\n'.format(error_prompt)
             continue
 
 
@@ -612,7 +621,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             check_script_error = message
 
             all_errors.append(check_script_error)
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action))
+
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action, message_params)
+
+            full_text += '{}\n'.format(error_prompt)
             continue
 
 
@@ -622,7 +634,6 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
         final_translated_actions.append(translated_action)
 
-    #pdb.set_trace()
     info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
     'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
     'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
@@ -641,6 +652,11 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         if '\n\n' in output:
             output = output[output.index('\n\n') + 2:]
         return output.strip()
+    
+
+    def _generate_reasons(full_text, default_params):
+        
+        pass
 
     def _generate_action(full_text, default_params):
         '''tracks all options for generated text + translated actions for the current step'''
@@ -767,8 +783,11 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     prompt_generator = PromptGenerator(prompt_args)
 
     default_params = copy.deepcopy(api_params)
+    reasons_params = copy.deepcopy(api_params)
+
     # stop when seeing a new line since we are generating one action per iter
     default_params['stop'] = '\n'
+    
 
     full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
 
@@ -840,8 +859,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             all_errors.append(parsing_error)
 
-            full_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
-            ongoing_text += '{}\n'.format(prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action))
+            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action)
+
+            full_text += '{}\n'.format(error_prompt)
+            ongoing_text += '{}\n'.format(error_prompt)
             continue
 
         parsed_program_lines = arg2abstract(program_lines)
@@ -892,10 +913,16 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action)
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action, message_params)
 
             full_text += '{}\n'.format(error_prompt)
             ongoing_text += '{}\n'.format(error_prompt)
+
+            #if need to get reasons:
+            # append reasons prompt
+            # reason_text = _generate_reasons(plan)
+            # append reason_text into plan
+
             continue
 
 

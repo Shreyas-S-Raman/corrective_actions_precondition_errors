@@ -30,17 +30,50 @@ suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3}
 '''
 Prompts for specific error causes
 '''
+class CausalErrors:
 
-# agent over-occupied error
+    #internally contained: obj, subtype, type
+    INTERNALLY_CONTAINED1 = ['the {} is inside something', ['obj']]
 
-# agent proximity error
+    #unflipped bool state: obj, state, subtype, type
+    UNFLIPPED_BOOL_STATE1 = ['{} is already {}', ['obj', 'state']]
 
-# agent facing wrong direction error
+    #hands full: character, subtype, type
+    HANDS_FULL1 = ['I cannot {} {}. My hands are full', ['obj','action']]
 
-# agent not holding object error
+    #already sitting: character, subtype, type
+    ALREADY_SITTING1 = ['{} am sitting', ['character']]
 
-# object inside closed structure error
+    #no path: char_room, target_room, subtype, type
+    NO_PATH1 = ['The {} and {} are not connected', ['char_room','target_room']]
 
-# invalid action error
+    #door closed: doorlist, char_room, target_room, subtype, type
+    DOOR_CLOSED1 = ['The door to {} is closed', ['target_room']]
 
-# repeated action on boolean state error
+    #proximity: character, obj, subtype, type
+    PROXIMITY1 = ['{} not near the {}',['character','obj']]
+
+    #not find: obj, subtype, type
+    NOT_FIND1 = ['I cannot find {}',['obj']]
+
+    #invalid action: obj, subtype, type
+    INVALID_ACTION1 = ['{} {} is not allowed', ['action','obj']]
+    INVALID_ACTION2 = ['{} {}',['obj','subtype']]
+
+    #max occupancy: obj, subtype, type
+    MAX_OCCUPANCY1 = ['The {} is full', ['obj']]
+
+    #not holding: character, obj, subtype, type
+    NOT_HOLDING1 = ['{} doesn\'t have the {}', ['character','obj']]
+
+    #not holding any: character, subtype, type
+    NOT_HOLDING_ANY1 = ['{} not holding anything', ['character']]
+
+    #not facing: character, obj, subtype, type
+    NOT_FACING1 = ['{} not facing the {}',['character','obj']]
+
+    #missing step: character, subtype, type
+    MISSING_STEP1 = ['{} {}',['character','subtype']]
+
+    #invalid room: char_room, target_room, subtype, type
+    INVALID_ROOM1 = ['{} doesn\'t exist', ['target_room']]
