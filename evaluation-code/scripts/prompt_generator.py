@@ -16,15 +16,15 @@ class ErrorParsing():
         """
         action = block_str[1:block_str.find(']')]
         block_str = block_str[block_str.find(']')+3:-1]
-        block_split = block_str.split(') <') # each element is <name_obj> (num)
+        block_split = block_str.split('> (') # each element is <name_obj> (num)
 
-        obj_names = [block[0:block.find('>')].lower().strip().replace('_',' ') for block in block_split if len(len(block[0:block.find('>')].strip()) > 0)]
+        #obj_names = [block[0:block.find('>')].lower().strip().replace('_',' ') for block in block_split if len(len(block[0:block.find('>')].strip()) > 0)]
         
-        return action, obj_names[0]
+        return action, block_split[0]
     
     def _get_error_reason(self, error_message, error_cause, error_params, obj, action):
 
-        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params, obj, action)
+        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params[0], obj, action)
     
     def _parse_precond_error(self, error_message, obj, action):
 
@@ -81,13 +81,14 @@ class ErrorParsing():
     
     def _format_error_param(self, error_param:str):
         error_param = error_param.replace('[','').replace(']','')
+        error_param = error_param.replace('<','').replace('>','')
         error_param = error_param.replace('(','').replace(')','')
         error_param = error_param.replace('_','')
         error_param = re.sub('\d','',error_param)
         #remove extra spaces caused by earlier replacements
         error_param = error_param.replace(' ','')
 
-        if error_param is 'character':
+        if error_param == 'character':
             error_param = error_param + 'is' if self.third_person else 'I am'
         
         return error_param.strip().lower()
@@ -129,8 +130,8 @@ class PromptGenerator():
     def _create_emptyprogram_prompt(self):
         return 'generate a list of steps'
     
-    def _create_parsibility_prompt(self, **kwargs):
-        pass
+    def _create_parsibility_prompt(self):
+        return 'generate a list of steps'
     def _cerate_nogen_prompt(self,**kwargs):
         pass
 
@@ -157,7 +158,7 @@ class PromptGenerator():
             #extract the cause for the error
             error_cause = self.error_parser._get_error_reason(error_message, error_type, args, obj, action)
 
-            error_info = generator_functions[self.error_info_type]({'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
+            error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
 
 
         #format the final error prompt template: output varies based on prompt inserts

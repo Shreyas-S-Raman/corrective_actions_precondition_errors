@@ -545,7 +545,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
 
         #add best step to plan + continue
-        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
+        full_text += f'\nStep 1: {best_curr}\n' if curr_step==0 else f'{best_curr}\n'
         all_translated_actions.append(translated_action)
         total_steps +=1
 
@@ -572,9 +572,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             all_errors.append(parsing_error)
 
-            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), translated_action, parsed_program_lines[-1])
 
-            full_text += '{}\nStep{}:'.format(error_prompt, curr_step+1)
+            full_text += '{}\nStep {}:'.format(error_prompt, curr_step+1)
             continue
 
 
@@ -585,9 +585,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             all_errors.append(empty_program_error)
 
-            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), translated_action, parsed_program_lines[-1])
 
-            full_text += '{}\nStep{}'.format(error_prompt, curr_step+1)
+            full_text += '{}\nStep {}'.format(error_prompt, curr_step+1)
             continue
 
 
@@ -602,9 +602,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             all_errors.append(precond_error)
 
-            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action, parsed_program_lines[-1])
+            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), translated_action, parsed_program_lines[-1])
 
-            full_text += '{}\nStep{}:'.format(error_prompt,curr_step)
+            full_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
             continue
 
 
@@ -622,9 +622,9 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action, message_params)
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
 
-            full_text += '{}\nStep{}:'.format(error_prompt,curr_step)
+            full_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
             continue
 
 
@@ -634,11 +634,18 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
         final_translated_actions.append(translated_action)
 
-    info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
-    'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+    #info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
+    #'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+    #'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+    #'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+    if total_steps==0:
+        info = {'parsed_program': None, 'executed': executed, 'scene_path': scene_path, 'init_graph_dict': scene_environment.initial_graph_dict,'modified_program': None,'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error': empty_program_error, 'total_steps':total_steps, 'final_steps': curr_step, 'no_gen_error': no_gen_error, 'score_error':score_error, 'all_errors': '\n'.join(all_errors)}
 
+    else:
+        info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+        'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
 
@@ -813,7 +820,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         # if prev. step not executed: remove error and bad step before adding new step
         if not executed:
-            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-3]) + '\n'
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
             executed = True
 
 
@@ -832,7 +839,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         #add best step to plan + continue
         
-        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
+        full_text += f'\nStep 1: {best_curr}\n' if curr_step==0 else f'{best_curr}\n'
         ongoing_text += f'{best_curr}\n'
 
         all_translated_actions.append(translated_action)
@@ -852,53 +859,59 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
+        parsed_program_lines = arg2abstract(program_lines)
+        
         #failure check 3: parsing error
         if parse_info['parsibility']==0:
             executed = False
+            pdb.set_trace()
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
 
-            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr, translated_action)
-
-            full_text += '{}\nStep{}:'.format(error_prompt, curr_step)
-            ongoing_text += '{}\nStep{}:'.format(error_prompt, curr_step)
+            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
+            
+            full_text += '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += '{}\nStep {}:'.format(error_prompt, curr_step+1)
             continue
 
-        parsed_program_lines = arg2abstract(program_lines)
+        
 
+        
         #failure check 4: empty program error
         if len(parsed_program_lines) == 0:
             executed = False
+            pdb.set_trace()
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
-            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr, translated_action)
+            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
 
-            full_text += '{}\nStep{}:'.format(error_prompt, curr_step)
-            ongoing_text += '{}\nStep{}:'.format(error_prompt, curr_step)
+            full_text += '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += '{}\nStep {}:'.format(error_prompt, curr_step+1)
 
             continue
 
 
-
+    
         #failure check 5: precondition error on the last action taken
         try:
 
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
+            pdb.set_trace()
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
 
-            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr, translated_action)
+            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
 
-            full_text += '{}\nStep{}:'.format(error_prompt,curr_step)
-            ongoing_text += '{}\nStep{}:'.format(error_prompt,curr_step)
+            full_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            ongoing_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
             continue
 
-
+        #pdb.set_trace()
         #take a single step/action in the VH scene
         try:
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
@@ -906,17 +919,19 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 
+        
         #failure check 6: executability error
         if not 'is executable' in message:
             executed = False
+            pdb.set_trace()
             check_script_error = message
 
             all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr, translated_action, message_params)
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
 
-            full_text += '{}\nStep{}:'.format(error_prompt,curr_step)
-            ongoing_text += '{}\nStep{}:'.format(error_prompt,curr_step)
+            full_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            ongoing_text += '{}\nStep {}:'.format(error_prompt,curr_step+1)
 
             #if need to get reasons:
             # append reasons prompt
@@ -933,11 +948,19 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         final_translated_actions.append(translated_action)
 
     #pdb.set_trace()
-    info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
-    'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+    #info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
+    #'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+    #'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+    #'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+    
+    if total_steps==0:
+        info = {'parsed_program': None, 'executed': executed, 'scene_path': scene_path, 'init_graph_dict': scene_environment.initial_graph_dict,'modified_program': None,'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error': empty_program_error, 'total_steps':total_steps, 'final_steps': curr_step, 'no_gen_error': no_gen_error, 'score_error':score_error, 'all_errors': '\n'.join(all_errors)}
 
+    else:
+        info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+        'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
 

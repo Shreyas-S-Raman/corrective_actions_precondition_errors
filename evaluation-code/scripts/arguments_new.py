@@ -67,7 +67,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'gpt2' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'code-davinci-002' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -78,7 +78,7 @@ class Arguments:
     prompt_template = 1
     custom_cause = True
     third_person = False
-    error_information = 'notion'
+    error_information = 'inference_1'
     suggestion_no = 1
 
     chosen_causal_reprompts = {
