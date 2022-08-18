@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1004
+    expID = 123
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -78,7 +78,7 @@ class Arguments:
     prompt_template = 1
     custom_cause = True
     third_person = False
-    error_information = 'inference_1'
+    error_information = 'cause_2'
     suggestion_no = 1
 
     chosen_causal_reprompts = {

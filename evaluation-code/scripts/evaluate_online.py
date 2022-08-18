@@ -421,7 +421,7 @@ def construct_generation_dict(args, evaluated_scenes):
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     # iterate through all test programs and save the ground truth for later evaluation
-    for test_path in args.test_paths[:2]:
+    for test_path in args.test_paths[2:10]:
         for scene in evaluated_scenes:
             #pdb.set_trace()
             lines = load_txt(test_path).strip().split('\n')
@@ -600,7 +600,7 @@ def main(args):
     #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
 
     execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args)
-
+    pdb.set_trace()
     parsed_program_paths = []
     for k in generation_info:
         parsed_program_paths.append(generation_info[k]['parsed_save_path'])
