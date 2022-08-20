@@ -18,15 +18,15 @@ class Arguments:
     DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds')
 
     '''experiment configs'''
-    debug = False
+    debug = False #original : False
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 123
+    expID = 126
     exp_name = 'experiment_{}'.format(expID)
-    num_workers = 40
+    num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
 
     '''LLM configs'''
@@ -79,7 +79,7 @@ class Arguments:
     custom_cause = True
     third_person = False
     error_information = 'cause_2'
-    suggestion_no = 1
+    suggestion_no = 4
 
     chosen_causal_reprompts = {
         'internally_contained': CausalErrors.INTERNALLY_CONTAINED1,

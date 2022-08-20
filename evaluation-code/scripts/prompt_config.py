@@ -22,8 +22,9 @@ error_provided = {'notion':ERROR_NOTION_1, 'inference_1':ERROR_INFERENCE_1, 'inf
 SUGGESTION_1 = 'A correct step would be:'
 SUGGESTION_2 = 'Therefore, a correct step would be:'
 SUGGESTION_3 = 'Next time you should:'
+SUGGESTION_4 = 'Correct the step:'
 
-suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3}
+suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3, 4: SUGGESTION_4}
 
 
 
