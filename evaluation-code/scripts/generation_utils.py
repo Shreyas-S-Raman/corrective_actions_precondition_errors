@@ -820,6 +820,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         # if prev. step not executed: remove error and bad step before adding new step
         if not executed:
+            pdb.set_trace()
             ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
             executed = True
 
@@ -864,7 +865,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 3: parsing error
         if parse_info['parsibility']==0:
             executed = False
-            #pdb.set_trace()
+            pdb.set_trace()
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
@@ -881,7 +882,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 4: empty program error
         if len(parsed_program_lines) == 0:
             executed = False
-            #pdb.set_trace()
+            pdb.set_trace()
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
@@ -900,7 +901,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
-            #pdb.set_trace()
+            pdb.set_trace()
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
@@ -923,7 +924,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 6: executability error
         if not 'is executable' in message:
             executed = False
-            #pdb.set_trace()
+            pdb.set_trace()
             check_script_error = message
 
             all_errors.append(check_script_error)
