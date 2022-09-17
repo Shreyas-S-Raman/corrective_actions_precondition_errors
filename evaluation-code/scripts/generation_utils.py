@@ -546,7 +546,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
 
         #add best step to plan + continue
-        full_text += f'\nStep 1: {best_curr}\n' if curr_step==0 else f'{best_curr}\n'
+        full_text += f'\nStep 1:{best_curr}\n' if curr_step==0 else f'{best_curr}\n'
         all_translated_actions.append(translated_action)
         total_steps +=1
 
@@ -845,7 +845,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         #add best step to plan + continue
         
-        full_text += f'\nStep 1: {best_curr}\n' if curr_step==0 else f'{best_curr}\n'
+        full_text += f'\nStep 1:{best_curr}\n' if curr_step==0 else f'{best_curr}\n'
         ongoing_text += f'{best_curr}\n'
 
         all_translated_actions.append(translated_action)
