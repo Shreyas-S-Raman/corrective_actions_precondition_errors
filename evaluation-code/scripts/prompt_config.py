@@ -19,12 +19,13 @@ ERROR_CAUSE_2 = 'I cannot {} the {} because {}'
 
 error_provided = {'notion':ERROR_NOTION_1, 'inference_1':ERROR_INFERENCE_1, 'inference_2': ERROR_INFERENCE_2, 'cause_1':ERROR_CAUSE_1, 'cause_2':ERROR_CAUSE_2}
 
-SUGGESTION_1 = 'A correct step would be:'
-SUGGESTION_2 = 'Therefore, a correct step would be:'
-SUGGESTION_3 = 'Next time you should:'
+SUGGESTION_1 = 'A correct step would be to'
+SUGGESTION_2 = 'Therefore, a correct step would be to'
+SUGGESTION_3 = 'Next time you should'
 SUGGESTION_4 = 'Correct the step:'
+SUGGESTION_5 = 'Instead I should have'
 
-suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3, 4: SUGGESTION_4}
+suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3, 4: SUGGESTION_4, 5: SUGGESTION_5}
 
 
 
