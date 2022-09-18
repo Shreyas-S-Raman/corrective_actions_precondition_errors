@@ -3,8 +3,9 @@ PROMPT_TEMPLATE_1 = 'Error: {}. {}'
 PROMPT_TEMPLATE_2 = 'Error: {}. Generate a list of reasons why:'
 PROMPT_TEMPLATE_3 = 'Step failed. {}. {}'
 PROMPT_TEMPLATE_4 = 'Step failed. {}. Generate a list of reasons why:'
+PROMPT_TEMPLATE_5 = 'Step {} failed. {}. {}'
 
-prompt_templates = {1:(PROMPT_TEMPLATE_1,2), 2:(PROMPT_TEMPLATE_2,1), 3:(PROMPT_TEMPLATE_3,2), 4:(PROMPT_TEMPLATE_4,1)}
+prompt_templates = {1:(PROMPT_TEMPLATE_1, ['error_info','suggestion']), 2:(PROMPT_TEMPLATE_2, ['error_info','generate_list']), 3:(PROMPT_TEMPLATE_3,['error_info','suggestion']), 4:(PROMPT_TEMPLATE_4, ['error_info']), 5:(PROMPT_TEMPLATE_5, ['step_no', 'error_info', 'suggestion'])}
 
 #information about 'existence' of error i.e. an error occured
 ERROR_NOTION_1 = 'Task failed'

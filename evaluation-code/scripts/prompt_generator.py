@@ -60,12 +60,13 @@ class ErrorParsing():
             error_message = error_message.replace('(','').replace(')','')
             error_message = error_message.replace('"','')
             error_message = re.sub('\d','',error_message)
+
             #remove extra spaces caused by earlier replacements
             error_message = error_message.replace('  ', ' ')
             error_message = error_message.replace('executing', 'trying to')
 
             if not self.third_person:
-                error_message = error_message.replace('character', 'I')
+                error_message = error_message.replace('character is', 'I am')
             
             return error_message.strip().lower()
 
@@ -86,12 +87,14 @@ class ErrorParsing():
         error_param = error_param.replace('_','')
         error_param = re.sub('\d','',error_param)
         #remove extra spaces caused by earlier replacements
-        error_param = error_param.replace(' ','')
+        error_param = error_param.replace('  ',' ')
+
+        error_param = error_param.strip().lower()
 
         if error_param == 'character':
             error_param = error_param + 'is' if self.third_person else 'I am'
         
-        return error_param.strip().lower()
+        return error_param
 
                 
 
@@ -102,7 +105,7 @@ class PromptGenerator():
 
     def __init__(self, prompt_args):
 
-        (self.prompt_template, self.prompt_inserts) = prompt_templates[prompt_args['prompt_template']]
+        (self.prompt_template, self.prompt_inputs) = prompt_templates[prompt_args['prompt_template']]
 
 
         self.error_information = error_provided[prompt_args['error_information']]
@@ -147,7 +150,8 @@ class PromptGenerator():
 
         #extract the action and object causing error from program line
         action, obj = self.error_parser._get_action_and_objs(program_line)
-
+        action = action.strip().lower()
+        obj = obj.strip().lower()
 
         #format the error information for the prompt template
         if error_type == 'empty_program':
@@ -160,9 +164,11 @@ class PromptGenerator():
 
             error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
 
+        all_prompt_inputs = {'step_no': step, 'error_info': error_info, 'suggestion': self.suggestion}
+        prompt_inputs = [all_prompt_inputs[i] for i in self.prompt_inputs]
 
         #format the final error prompt template: output varies based on prompt inserts
-        return self.prompt_template.format(*[error_info, self.suggestion])
+        return self.prompt_template.format(*prompt_inputs).replace('  ',' ')
        
 
 
