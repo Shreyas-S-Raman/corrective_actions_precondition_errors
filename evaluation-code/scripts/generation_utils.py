@@ -17,6 +17,7 @@ import time
 from scene_gym import SceneGym
 from prompt_generator import PromptGenerator
 import pdb
+import string
 
 np.random.seed(123)
 
@@ -240,12 +241,16 @@ def iterative_api_request(example, task_prompt, api_params, sentence_model, acti
         return output.strip()
 
     default_params = copy.deepcopy(api_params)
+
     # stop when seeing a new line since we are generating one action per iter
     default_params['stop'] = '\n'
     full_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
-    #pdb.set_trace()
+    
+
     all_translated_actions = []
     curr_step = 0
+
+
     while curr_step < max_steps:
 
         '''tracks all options for generated text + translated actions for the current step'''
@@ -380,7 +385,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             output = output[output.index('\n\n') + 2:]
         return output.strip()
 
-    def _generate_action(full_text, default_params):
+    def _generate_action(full_text, default_params, executed):
         '''tracks all options for generated text + translated actions for the current step'''
         curr_generated = []
         curr_matching = []
@@ -412,7 +417,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
                 processed = generated_text.strip().lower()
             else:
                 try:
-                    processed = generated_text[generated_text.index(':') + 1:].strip().lower()
+                    processed = generated_text[generated_text.index(':') + 1:].strip().lower() if executed else generated_text.strip().lower()
                 except ValueError as e:
                     curr_generated.append('PARSING ERROR')
                     curr_matching.append(-200)
@@ -420,6 +425,10 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
                     curr_translated.append('PARSING ERROR')
                     curr_overall.append(-200)
                     continue
+            
+            #remove string punctuation from processed output text of LLM
+            processed = processed.translate(str.maketrans('', '', string.punctuation))
+
             most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
             most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
             overall_score = _get_score(matching_score, logprob)
@@ -518,6 +527,8 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
     curr_step = 0; total_steps = 0
 
+    executed = True
+
 
 
     #track errors until escape step
@@ -527,7 +538,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
         
 
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(full_text, executed), default_params)
+        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(full_text, executed), default_params, executed)
         
         executed = True
 
@@ -663,7 +674,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         
         pass
 
-    def _generate_action(full_text, default_params):
+    def _generate_action(full_text, default_params, executed):
         '''tracks all options for generated text + translated actions for the current step'''
         curr_generated = []
         curr_matching = []
@@ -695,7 +706,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
                 processed = generated_text.strip().lower()
             else:
                 try:
-                    processed = generated_text[generated_text.index(':') + 1:].strip().lower()
+                    processed = generated_text[generated_text.index(':') + 1:].strip().lower() if executed else generated_text.strip().lower()
                 except ValueError as e:
                     curr_generated.append('PARSING ERROR')
                     curr_matching.append(-200)
@@ -703,6 +714,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
                     curr_translated.append('PARSING ERROR')
                     curr_overall.append(-200)
                     continue
+            
+            #remove string punctuation from processed output text of LLM
+            processed = processed.translate(str.maketrans('', '', string.punctuation))
+
             most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
             most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
             overall_score = _get_score(matching_score, logprob)
@@ -814,7 +829,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params)
+        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
 
         
         # if prev. step not executed: remove error and bad step before adding new step
