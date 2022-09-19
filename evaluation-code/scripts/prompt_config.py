@@ -29,7 +29,6 @@ SUGGESTION_5 = 'Instead I should have'
 suggestion_provided = {1:SUGGESTION_1, 2:SUGGESTION_2, 3:SUGGESTION_3, 4: SUGGESTION_4, 5: SUGGESTION_5}
 
 
-
 '''
 Prompts for specific error causes
 '''

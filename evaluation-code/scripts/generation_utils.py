@@ -525,12 +525,11 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     while curr_step < max_steps and total_steps < max_steps*2:
         
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
-        executed = True
-
-        # accumulate output and continue
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(full_text, default_params)
         
 
+        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(full_text, executed), default_params)
+        
+        executed = True
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
@@ -815,9 +814,9 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params)
 
-        pdb.set_trace()
+        
         # if prev. step not executed: remove error and bad step before adding new step
         if not executed:
             
@@ -1106,7 +1105,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
 
     scene_environment = SceneGym(scene_path, scene_num, task_prompt)
-    # prompt_generator = PromptGenerator(prompt_args)
 
     default_params = copy.deepcopy(api_params)
     # stop when seeing a new line since we are generating one action per iter

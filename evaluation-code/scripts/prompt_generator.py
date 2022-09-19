@@ -96,12 +96,37 @@ class ErrorParsing():
         
         return error_param
 
-                
+class PromptContext():
 
-            
+    def __init__(self, chosen_context):
+
+        context_transformations = {'full-history': self.full_history, 'task-history': self.task_history, 'step-history': self.step_history}
+
+        self.context_transformation = context_transformations[chosen_context]
+
+    def full_history(self, plan_text):
+        return plan_text
+    
+    def task_history(self, plan_text):
+        return plan_text.split('\n\n')[1]
+
+    def step_history(self, plan_text):
+        related_task_text = plan_text.split('\n\n')[1]
+        task_name = related_task_text.split('\n')[0]
+        step_and_error = related_task_text.split('\n')[:-2]
+        return '\n'.join(task_name, step_and_error)
+
+    def change_context(self, plan_text, executed):
+
+        if executed:
+            return plan_text
+        
+        else:
+            return self.context_transformation(plan_text)
 
 
-class PromptGenerator():
+
+class PromptGenerator(PromptContext):
 
     def __init__(self, prompt_args):
 
@@ -113,6 +138,11 @@ class PromptGenerator():
         self.suggestion = suggestion_provided[prompt_args['suggestion_no']]
 
         self.error_parser = ErrorParsing(prompt_args['custom_cause'], prompt_args['third_person'], prompt_args['chosen_causal_reprompts'])
+
+        super(PromptGenerator, self).__init__(prompt_args['chosen_context'])
+
+
+
 
     
     def _create_inference2_prompt(self, **kwargs):

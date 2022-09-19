@@ -99,6 +99,9 @@ class Arguments:
         'invalid_room':CausalErrors.INVALID_ROOM1
     }
 
+    #context prior to reprompting string: full-history, task-history, step-history
+    chosen_context = 'task-history'
+
 
     step_by_step = False #add 'Let's think step by step to prompt'
     one_error = True
