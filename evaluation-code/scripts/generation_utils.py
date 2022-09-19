@@ -465,7 +465,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         nogen_terminate = True; score_terminate = False; error_message = None
 
         for idx in highest_ids:
-            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step'):
+            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step' or not executed):
                 nogen_terminate = False
 
         if nogen_terminate:
@@ -754,7 +754,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         nogen_terminate = True; score_terminate = False; error_message = None
 
         for idx in highest_ids:
-            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step'):
+            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step' or not executed):
                 nogen_terminate = False
 
         if nogen_terminate:
