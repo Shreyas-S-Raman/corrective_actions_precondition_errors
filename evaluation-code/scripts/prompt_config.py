@@ -44,7 +44,7 @@ class CausalErrors:
     HANDS_FULL1 = ['I cannot {} {}. My hands are full', ['obj','action']]
 
     #already sitting: character, subtype, type
-    ALREADY_SITTING1 = ['{} am sitting', ['character']]
+    ALREADY_SITTING1 = ['{} sitting', ['character']]
 
     #no path: char_room, target_room, subtype, type
     NO_PATH1 = ['The {} and {} are not connected', ['char_room','target_room']]
@@ -67,6 +67,7 @@ class CausalErrors:
 
     #not holding: character, obj, subtype, type
     NOT_HOLDING1 = ['{} doesn\'t have the {}', ['character','obj']]
+    NOT_HOLDING2 = ['{} don\'t have the {}', ['character','obj']]
 
     #not holding any: character, subtype, type
     NOT_HOLDING_ANY1 = ['{} not holding anything', ['character']]

@@ -450,7 +450,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if translated_action in all_translated_actions:
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -739,7 +739,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if translated_action in all_translated_actions:
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -884,7 +884,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 3: parsing error
         if parse_info['parsibility']==0:
             executed = False
-            pdb.set_trace()
+            
             parsing_error = parse_info['parsing_error']
 
             all_errors.append(parsing_error)
@@ -901,7 +901,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 4: empty program error
         if len(parsed_program_lines) == 0:
             executed = False
-            pdb.set_trace()
+            
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
@@ -920,7 +920,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
-            pdb.set_trace()
+            
             precond_error = 'ScriptFail: {}'.format(e.message)
 
             all_errors.append(precond_error)
@@ -943,7 +943,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 6: executability error
         if not 'is executable' in message:
             executed = False
-            pdb.set_trace()
+            
             check_script_error = message
 
             all_errors.append(check_script_error)
@@ -1230,7 +1230,6 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         #take a single step/action in the VH scene
         try:
-            pdb.set_trace()
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:

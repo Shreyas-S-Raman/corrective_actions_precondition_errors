@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1008
+    expID = 129
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -47,15 +47,15 @@ class Arguments:
     api_n = 10
     api_logprobs = 1
     api_echo = False
-    api_presence_penalty = 0.7
+    api_presence_penalty = 0.3
     api_frequency_penalty = 0.3 #original: 0.3
     api_best_of = 1
 
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.8
-    api_beta = 0.3
+    api_cutoff_threshold = 0.7
+    api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 
 
@@ -67,7 +67,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'ada' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'davinci-instruct-beta' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
     allow_charges = False #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -78,8 +78,8 @@ class Arguments:
     prompt_template = 1
     custom_cause = True
     third_person = False
-    error_information = 'cause_2'
-    suggestion_no = 4
+    error_information = 'cause_1'
+    suggestion_no = 1
 
     chosen_causal_reprompts = {
         'internally_contained': CausalErrors.INTERNALLY_CONTAINED1,
@@ -92,7 +92,7 @@ class Arguments:
         'not_find': CausalErrors.NOT_FIND1,
         'invalid_action':CausalErrors.INVALID_ACTION1,
         'max_occupancy':CausalErrors.MAX_OCCUPANCY1,
-        'not_holding':CausalErrors.NOT_HOLDING1,
+        'not_holding':CausalErrors.NOT_HOLDING1 if third_person else CausalErrors.NOT_HOLDING2,
         'not_holding_any':CausalErrors.NOT_HOLDING_ANY1,
         'not_facing':CausalErrors.NOT_FACING1,
         'missing_step':CausalErrors.MISSING_STEP1,
