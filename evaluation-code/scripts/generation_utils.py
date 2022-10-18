@@ -450,7 +450,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in all_translated_actions):
+            if (translated_action in final_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -489,7 +489,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
 
-            return None, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+            return None, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
         # select the previously generated output whose score is the highest
         '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
@@ -506,7 +506,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         if verbose:
             print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
 
-        return best_curr, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+        return best_curr, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
 
 
@@ -521,6 +521,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     final_text = example + task_prompt
 
     all_translated_actions = []
+    all_generated_actions = []
     final_translated_actions = []
 
     all_errors = []
@@ -538,7 +539,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
         
 
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(full_text, executed), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(full_text, executed), default_params, executed)
         
         executed = True
 
@@ -558,6 +559,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         #add best step to plan + continue
         full_text += f'\nStep 1:{best_curr}\n' if curr_step==0 else f'{best_curr}\n'
         all_translated_actions.append(translated_action)
+        all_generated_actions.append(generated_action)
         total_steps +=1
 
 
@@ -656,7 +658,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
-    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
+    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 def online_api_request_one_error(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
@@ -739,7 +741,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in all_translated_actions):
+            if (translated_action in final_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -778,10 +780,11 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
 
-            return None, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+            return None, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
         # select the previously generated output whose score is the highest
         '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
+
         if translated_condition:
             best_curr = curr_translated[best_idx]
             best_curr = best_curr[0].upper() + best_curr[1:]
@@ -795,7 +798,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         if verbose:
             print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
 
-        return best_curr, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+        return best_curr, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
 
 
@@ -815,6 +818,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     final_text = example + task_prompt
 
     all_translated_actions = []
+    all_generated_actions = []
     final_translated_actions = []
 
     all_errors = []
@@ -829,7 +833,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
 
         
         # if prev. step not executed: remove error and bad step before adding new step
@@ -863,6 +867,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         ongoing_text += f'{best_curr}\n'
 
         all_translated_actions.append(translated_action)
+        all_generated_actions.append(generated_action)
         total_steps +=1
 
 
@@ -973,7 +978,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
-    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
+    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 
 def resampling_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
@@ -1048,7 +1053,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if translated_action in all_translated_actions:
+            if translated_action in final_translated_actions:
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -1088,7 +1093,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
             error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
 
-            return None, curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+            return None, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
 
         # select the previously generated output whose score is the highest
         '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
@@ -1111,11 +1116,12 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         #store list of alternative current steps + translated steps
         alternative_curr = [_get_curr(curr_translated, curr_generated, translated_condition, i) for i in reversed(sorted_overall)]
         alternative_translated = [curr_translated[i] for i in reversed(sorted_overall)]
+        alternative_generated = [curr_generated[i] for i in reversed(sorted_overall)]
 
         if verbose:
             print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
 
-        return alternative_curr, alternative_translated, nogen_terminate, score_terminate, error_message
+        return alternative_curr, alternative_generated, alternative_translated, nogen_terminate, score_terminate, error_message
 
 
 
@@ -1131,6 +1137,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     final_text = example + task_prompt
 
     all_translated_actions = []
+    all_generated_actions = []
     final_translated_actions = []
 
     all_errors = []
@@ -1151,12 +1158,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
 
         if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
-            alternative_curr, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
             curr_idx = 0
-
-        #best_curr = alternative_curr[curr_idx]
-        #translated_action = alternative_translate[curr_idx]
-        #executed = True
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
@@ -1172,6 +1175,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         best_curr = alternative_curr[curr_idx]
         translated_action = alternative_translate[curr_idx]
+        generated_action = alternative_generated[curr_idx]
         executed = True
 
         #add best step to plan + continue
@@ -1179,6 +1183,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         ongoing_text += f'{best_curr}\n'
 
         all_translated_actions.append(translated_action)
+        all_generated_actions.append(generated_action)
         total_steps +=1
         curr_idx += 1
 
@@ -1261,7 +1266,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
 
-    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_translated_actions, info
+    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 
 

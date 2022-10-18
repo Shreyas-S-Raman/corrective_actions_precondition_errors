@@ -159,6 +159,10 @@ def get_args():
     args.full_parsed_save_path = os.path.join(args.exp_path, 'full_parsed')
     args.init_graph_save_path = os.path.join(args.exp_path, 'init_graphs')
     args.unity_parsed_save_path = os.path.join(args.exp_path, 'unity_parsed')
+
+    args.full_generated_save_path = os.path.join(args.exp_path, 'full_generated')
+    args.full_generated_parsed_save_path = os.path.join(args.exp_path, 'full_generated_parsed')
+
     if os.path.exists(args.exp_path) and parsed_args.sweep:
         print(f'** removing previously existed sweep dir [{args.exp_path}]')
         os.system(f'rm -rf {args.exp_path}')

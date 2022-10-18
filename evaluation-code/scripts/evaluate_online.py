@@ -229,16 +229,16 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
     if args.iterative and not args.raw_lm:
 
         if args.resampling:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = resampling_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps=args.api_max_steps,
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = resampling_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         elif not args.one_error:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
         else:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
@@ -270,6 +270,7 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         '''
         matched_program_text = '\n'.join(matched_program_lines).strip()
         full_matched_program_text = '\n'.join(full_matched_program_lines).strip()
+        full_generated_text = '\n'.join(full_generated_lines).strip()
 
         if args.verbose:
             print('*************** MATCHED TEXT ***************\n{}'.format(matched_program_text))
@@ -277,10 +278,12 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         '''matched_program_text: join together converted actions to single string (each step on different line)'''
         save_txt(info['matched_save_path'], matched_program_text)
         save_txt(info['full_matched_save_path'], full_matched_program_text)
+        save_txt(info['full_generated_save_path'], full_generated_text)
         # parse matched actions into vh program ============================================
 
         parsed_program_lines, parse_info = str2program_list(matched_program_lines)
         full_parsed_program_lines, __ = str2program_list(full_matched_program_lines)
+        full_parsed_generated_lines, __ = str2program_list(full_generated_lines)
 
         # remove consecutive actions
         parsed_program_lines = remove_same_consecutive(parsed_program_lines)
@@ -289,13 +292,19 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         full_parsed_program_lines = remove_same_consecutive(full_parsed_program_lines)
         full_parsed_program_text = '\n'.join(full_parsed_program_lines).strip()
 
+        full_parsed_generated_lines = remove_same_consecutive(full_parsed_generated_lines)
+        full_parsed_generated_text = '\n'.join(full_parsed_generated_lines).strip()
+
         if args.verbose:
             print('*************** PARSED TEXT ***************\n{}'.format(parsed_program_text))
         save_txt(info['parsed_save_path'], parsed_program_text)
         save_txt(info['full_parsed_save_path'], full_parsed_program_text)
+        save_txt(info['full_generated_parsed_save_path'], full_parsed_generated_text)
+
         # save generation info
         generation_info[(query_task, query_desc, scene)]['matched_text'] = matched_program_text
         generation_info[(query_task, query_desc, scene)]['full_matched_text'] = full_matched_program_text
+        generation_info[(query_task, query_desc, scene)]['full_generated_text'] = full_generated_text
 
     # save generation info
     generation_info[(query_task, query_desc, scene)]['example_text'] = example_str
@@ -447,12 +456,30 @@ def construct_generation_dict(args, evaluated_scenes):
                 generation_info[(task, desc, scene)]['id'] = num_existing
                 generation_info[(task, desc, scene)]['formatted_task_title'] = task.lower().strip().replace(' ', '_')
                 generation_info[(task, desc, scene)]['base_save_name'] = '{}-{}-scene{}.txt'.format(generation_info[(task, desc, scene)]['formatted_task_title'], num_existing, scene)
+
+                #final raw plan text
                 generation_info[(task, desc, scene)]['raw_save_path'] = os.path.join(args.api_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                #full raw plan text 
                 generation_info[(task, desc, scene)]['full_save_path'] = os.path.join(args.full_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                #full generated plan text (w/o translation)
+                generation_info[(task, desc, scene)]['full_generated_save_path'] = os.path.join(args.full_generated_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # matched plan text (for raw plan)
                 generation_info[(task, desc, scene)]['matched_save_path'] = os.path.join(args.matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # full matched plan text (for full raw plan)
                 generation_info[(task, desc, scene)]['full_matched_save_path'] = os.path.join(args.full_matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # parsed plan text (for raw plan)
                 generation_info[(task, desc, scene)]['parsed_save_path'] = os.path.join(args.parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # parsed plan text (for full raw plan)
                 generation_info[(task, desc, scene)]['full_parsed_save_path'] = os.path.join(args.full_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # full generated plan text (w/o translation)
+                generation_info[(task, desc, scene)]['full_generated_parsed_save_path'] = os.path.join(args.full_generated_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
 
             # if the file has sketch annotation, store those too
             base_fname = '/'.join(test_path.split('/')[-2:])[:-4]
@@ -660,7 +687,7 @@ def main(args):
     generation_info = update_info_with_execution(generation_info, execution_results)
 
     #pdb.set_trace() 
-    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
+    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
         data_list = [task, desc, scene]
