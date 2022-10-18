@@ -474,7 +474,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             error_message = f'No plan generated: model thinks it should terminate'
 
-            return None, None, nogen_terminate, score_terminate, error_message
+            return None, None, None, nogen_terminate, score_terminate, error_message
 
         # calculate most likely step ===================================
         '''compare best score with cutoff threshold: cutoff threshold not implemented by default
@@ -765,7 +765,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             error_message = f'No plan generated: model thinks it should terminate'
 
-            return None, None, nogen_terminate, score_terminate, error_message
+            return None, None, None, nogen_terminate, score_terminate, error_message
 
         # calculate most likely step ===================================
         '''compare best score with cutoff threshold: cutoff threshold not implemented by default
