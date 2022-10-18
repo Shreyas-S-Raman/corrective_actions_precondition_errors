@@ -174,6 +174,8 @@ def get_args():
         os.makedirs(args.full_matched_save_path, exist_ok = True)
         os.makedirs(args.full_save_path, exist_ok=True)
         os.makedirs(args.full_parsed_save_path, exist_ok = True)
+        os.makedirs(args.full_generated_save_path, exist_ok=True)
+        os.makedirs(args.full_generated_parsed_save_path, exist_ok=True)
 
     os.makedirs(args.init_graph_save_path, exist_ok=True)
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
