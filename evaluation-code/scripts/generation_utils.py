@@ -828,6 +828,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
     #track errors until escape step
+    pdb.set_trace()
 
     while curr_step < max_steps and total_steps < max_steps*2:
         #pdb.set_trace()
