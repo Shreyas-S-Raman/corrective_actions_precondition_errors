@@ -922,7 +922,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     
         #failure check 5: precondition error on the last action taken
         try:
-
+            pdb.set_trace()
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
