@@ -376,8 +376,11 @@ Note: get good video output from VH for intermediate steps and final best plan
 '''
 def online_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
-    def _get_score(matching_score, log_prob):
+    def _get_score_sum(matching_score, log_prob):
         return matching_score + beta * log_prob
+    
+    def _get_score_product(matching_score, log_prob):
+        return ((matching_score + 1.0)/2.0) * np.exp(log_prob)
 
     def _format_api_output(output):
         # exclude examples
@@ -431,7 +434,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
             most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
-            overall_score = _get_score(matching_score, logprob)
+            overall_score = _get_score_product(matching_score, logprob)
             '''matching_score + beta * log_prob'''
 
             '''indexes action list with most similar index for action'''
@@ -662,8 +665,11 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
 def online_api_request_one_error(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
-    def _get_score(matching_score, log_prob):
+    def _get_score_sum(matching_score, log_prob):
         return matching_score + beta * log_prob
+    
+    def _get_score_product(matching_score, log_prob):
+        return ((matching_score + 1.0)/2.0)*np.exp(log_prob)
 
     def _format_api_output(output):
         # exclude examples
@@ -722,11 +728,19 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
             most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
-            overall_score = _get_score(matching_score, logprob)
-            '''matching_score + beta * log_prob'''
 
             '''indexes action list with most similar index for action'''
             translated_action = action_list[most_similar_idx]
+            program_line, ___ = str2program_list([translated_action])
+            parsed_program_line = arg2abstract(program_line)
+            preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
+
+            modify_objects_unity2script(helper, script, precond)
+
+            overall_score = _get_score_product(matching_score, logprob)
+            '''matching_score + beta * log_prob'''
+
+           
 
             if verbose:
                 print(f'** {generated_text} ({translated_action}; matching_score={matching_score:.2f}; mean_logprob={logprob:.2f}); overall={overall_score:.2f}')
@@ -922,7 +936,6 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     
         #failure check 5: precondition error on the last action taken
         try:
-            pdb.set_trace()
             preconditions = get_preconds_script([parsed_program_lines[-1]], verbose=verbose).printCondsJSON()
         except ScriptFail as e:
             executed = False
@@ -1236,7 +1249,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         #take a single step/action in the VH scene
         try:
-            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, graph_dict, ____, prev_graph_dict, modified_script, id_mapping = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
