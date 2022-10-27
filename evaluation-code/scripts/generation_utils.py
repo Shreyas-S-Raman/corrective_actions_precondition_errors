@@ -842,7 +842,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
     #track errors until escape step
-    pdb.set_trace()
+    # pdb.set_trace()
 
     while curr_step < max_steps and total_steps < max_steps*2:
         #pdb.set_trace()
@@ -1306,7 +1306,7 @@ def arg2abstract(program_lines):
         elif len(obj_names_corr) == 2:
             inst = f'[{action.upper()}] <{obj_names_corr[0]}> ({inst_nums_corr[0]}) <{obj_names_corr[1]}> ({inst_nums_corr[1]})'
         else:
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             raise ValueError
         _program_lines.append(inst)
     return _program_lines

@@ -711,8 +711,8 @@ class graph_dict_helper(object):
 
                 number_objects_to_add = max_occupancy - len(occupied_edges)
                 if number_objects_to_add < 0:
-                    import ipdb
-                    ipdb.set_trace()
+                    import pdb
+                    pdb.set_trace()
                 
                 object_placing = self.object_placing
                 random.shuffle(objects_to_place)
