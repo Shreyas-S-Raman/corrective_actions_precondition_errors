@@ -483,10 +483,14 @@ class graph_dict_helper(object):
         assert first_room is not None and first_room in available_rooms_in_graph
 
         # mapping objects
+        new_object_keys = []
+
         for obj in objects_in_script.keys():
             # objects that are specified already
             if objects_in_script[obj] is not None:
                 continue
+            else:
+                new_object_keys.append(obj)
 
             room_obj = location_precond[obj] if obj in location_precond else first_room
             room_id = [i["id"] for i in filter(lambda v: v['class_name'] == room_obj, graph_dict["nodes"])][0]
@@ -531,7 +535,7 @@ class graph_dict_helper(object):
             for parameter in script_line.parameters:
                 parameter.instance = objects_in_script[(parameter.name, parameter.instance)]
                 
-        return objects_in_script, first_room, room_mapping
+        return objects_in_script, new_object_keys, first_room, room_mapping
 
     def prepare_from_precondition(self, precond, objects_in_script, graph_dict):
 
