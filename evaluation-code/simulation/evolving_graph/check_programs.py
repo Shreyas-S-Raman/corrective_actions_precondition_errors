@@ -162,12 +162,11 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
     if modify_graph:
         ## add missing object from scripts (id from 1000) and set them to default setting
         ## id mapping can specify the objects that already specify in the graphs
-        # import pdb; pdb.set_trace()
-        # door_states = [n for n in graph_dict['nodes'] if n['class_name'] == 'door'][0]['states']
+        
         helper.set_to_default_state(graph_dict, None, id_checker=lambda v: True)
-        # print([n for n in graph_dict['nodes'] if n['class_name'] == 'fax_machine'])
+        
         id_mapping, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
-        # print([n for n in graph_dict['nodes'] if n['class_name'] == 'fax_machine'])
+        
         info = {'room_mapping': room_mapping}
         objects_id_in_script = [v for v in id_mapping.values()]
         helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in objects_id_in_script)
@@ -183,9 +182,6 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
         ## set relation and state from precondition
         helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=False)
         random_objects_id = helper.random_objects_id
-        # CHANGED: prepare the precond in the last so that its change won't be overwritten
-        # helper.prepare_from_precondition(precond, id_mapping, graph_dict)
-
         helper.open_all_doors(graph_dict)
         helper.ensure_light_on(graph_dict, id_checker=lambda v: v not in objects_id_in_script)
 
@@ -207,7 +203,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
         graph = EnvironmentGraph(graph_dict)
         name_equivalence = utils.load_name_equivalence()
         executor = ScriptExecutor(graph, name_equivalence)
-        
+
     executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
@@ -221,9 +217,10 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
     return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
-def check_script(program_str, precond, graph_path, script_executor = None, inp_graph_dict=None, modify_graph=True, id_mapping={}, info={}):
+def check_script(program_str, precond, graph_path, script_executor = None, helper = None, inp_graph_dict=None, modify_graph=True, id_mapping={}, info={}):
 
-    helper = utils.graph_dict_helper(max_nodes=max_nodes)
+    if helper is None:
+        helper = utils.graph_dict_helper(max_nodes=max_nodes)
 
     try:
         script = read_script_from_list_string(program_str)
@@ -236,6 +233,80 @@ def check_script(program_str, precond, graph_path, script_executor = None, inp_g
         graph_dict = inp_graph_dict
     message, message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
         helper, script, precond, graph_dict, w_graph_list=True, executor = script_executor, modify_graph=modify_graph,
+        id_mapping=id_mapping, place_other_objects=False, **info)
+
+    return message, message_params, executable, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
+
+def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor = None, first_step=False, place_other_objects=True, id_mapping={}, **info):
+
+    helper.initialize(graph_dict)
+    script, precond = modify_objects_unity2script(helper, script, precond)
+    
+    ## add missing object from scripts (id from 1000) and set them to default setting
+    ## id mapping can specify the objects that already specify in the graphs
+    if first_step:
+        helper.set_to_default_state(graph_dict, None, id_checker=lambda v: True)
+    
+    id_mapping, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+    
+    info = {'room_mapping': room_mapping}
+    objects_id_in_script = [v for v in id_mapping.values()]
+    helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in objects_id_in_script)
+
+    ## place the random objects (id from 2000)
+    if place_other_objects:
+        max_node_to_place = max_nodes - len(graph_dict["nodes"])
+        n = random.randint(max_node_to_place - 20, max_node_to_place)
+        helper.add_random_objs_graph_dict(graph_dict, n=max(n, 0))
+        helper.set_to_default_state(graph_dict, None, id_checker=lambda v: v >= 2000)
+        helper.random_change_object_state(id_mapping, graph_dict, id_checker=lambda v: v not in objects_id_in_script)
+
+    ## set relation and state from precondition
+    if first_step:
+        helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=False)
+        random_objects_id = helper.random_objects_id
+        helper.open_all_doors(graph_dict)
+        helper.ensure_light_on(graph_dict, id_checker=lambda v: v not in objects_id_in_script)
+
+    # prepare the precond in the end so that its change won't be overwritten
+    helper.prepare_from_precondition(precond, id_mapping, graph_dict)
+    helper.check_binary(graph_dict, id_checker=lambda v: v >= random_objects_id, verbose=False)
+    helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=True)
+    
+    assert len(graph_dict["nodes"]) <= max_nodes
+
+    init_graph_dict = copy.deepcopy(graph_dict)
+
+    if executor is None:
+        graph = EnvironmentGraph(graph_dict)
+        name_equivalence = utils.load_name_equivalence()
+        executor = ScriptExecutor(graph, name_equivalence)
+
+    executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
+
+    if executable:
+        message = 'Script is executable'
+    else:
+        message = 'Script is not executable, since {}'.format(executor.info.get_error_string())
+
+    #extract + return the parameters used to generate the error
+    error_parameters = executor.info.get_error_params()
+    
+    return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
+
+def check_step(program_str, precond, graph_path, script_executor, helper, inp_graph_dict=None, first_step=False, id_mapping={}, info={}):
+
+    try:
+        script = read_script_from_list_string(program_str)
+    except ScriptParseException:
+        return None, None, None, None, None, None, None, None
+
+    if inp_graph_dict is None:
+        graph_dict = utils.load_graph_dict(graph_path)
+    else:
+        graph_dict = inp_graph_dict
+    message, message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_step(
+        helper, script, precond, graph_dict, w_graph_list=True, executor = script_executor, first_step = first_step,
         id_mapping=id_mapping, place_other_objects=False, **info)
 
     return message, message_params, executable, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script

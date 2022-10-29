@@ -22,7 +22,7 @@ class SceneGym():
 
     def step(self, program_lines, precond):
 
-        (message, message_params, executable, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script) = check_script(program_lines, precond, self.scene_path, self.script_executor, inp_graph_dict=self.graph_dict, modify_graph=True, id_mapping= self.id_mapping, info={})
+        (message, message_params, executable, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script) = check_step(program_lines, precond, self.scene_path, self.script_executor, self.helper, inp_graph_dict=self.graph_dict, first_step = self.steps==0, id_mapping= self.id_mapping, info={})
 
         #new graph dictionary is final dictionary in list of dict.
         self.prev_graphs_stack.append((self.steps, self.graph_dict))
@@ -55,6 +55,8 @@ class SceneGym():
         graph = EnvironmentGraph(self.graph_dict)
         name_equivalence = utils.load_name_equivalence()
         self.script_executor = ScriptExecutor(graph, name_equivalence)
+        self.helper = utils.graph_dict_helper(max_nodes=300)
+
 
     def reset_graph_dict(self, target_step):
         '''resets the graph_dict field to the graph at the required target step'''
