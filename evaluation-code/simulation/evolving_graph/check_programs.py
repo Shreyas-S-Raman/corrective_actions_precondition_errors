@@ -155,7 +155,7 @@ def translate_graph_dict(path):
     return translated_path
 
 
-def check_one_program(helper, script, precond, graph_dict, w_graph_list, executor = ScriptExecutor(), modify_graph=True, place_other_objects=True, id_mapping={}, **info):
+def check_one_program(helper, script, precond, graph_dict, w_graph_list, executor = None, modify_graph=True, place_other_objects=True, id_mapping={}, **info):
 
     helper.initialize(graph_dict)
     script, precond = modify_objects_unity2script(helper, script, precond)
@@ -202,9 +202,12 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
         helper.modify_script_with_specified_id(script, id_mapping, **info)
 
     init_graph_dict = copy.deepcopy(graph_dict)
-    graph = EnvironmentGraph(graph_dict)
-    name_equivalence = utils.load_name_equivalence()
-    # executor = ScriptExecutor(graph, name_equivalence)
+
+    if executor is None:
+        graph = EnvironmentGraph(graph_dict)
+        name_equivalence = utils.load_name_equivalence()
+        executor = ScriptExecutor(graph, name_equivalence)
+        
     executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
@@ -218,7 +221,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
     return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
-def check_script(program_str, precond, graph_path, script_executor = ScriptExecutor(), inp_graph_dict=None, modify_graph=True, id_mapping={}, info={}):
+def check_script(program_str, precond, graph_path, script_executor = None, inp_graph_dict=None, modify_graph=True, id_mapping={}, info={}):
 
     helper = utils.graph_dict_helper(max_nodes=max_nodes)
 
