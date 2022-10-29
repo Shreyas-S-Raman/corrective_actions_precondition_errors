@@ -633,7 +633,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             message = "{}: {}".format(e.__class__.__name__, e)
 
         #failure check 6: executability error
-        if not 'executable' in message:
+        if not 'is executable' in message:
             executed = False
             check_script_error = message
 
@@ -960,7 +960,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         
         #failure check 6: executability error
-        if not 'executable' in message:
+        if not 'is executable' in message:
             executed = False
             
             check_script_error = message
@@ -1255,7 +1255,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             message = "{}: {}".format(e.__class__.__name__, e)
 
         #failure check 6: executability error
-        if not 'executable' in message:
+        if not 'is executable' in message:
             executed = False
             check_script_error = message
 
