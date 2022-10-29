@@ -155,7 +155,7 @@ def translate_graph_dict(path):
     return translated_path
 
 
-def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_graph=True, place_other_objects=True, id_mapping={}, **info):
+def check_one_program(helper, script, precond, graph_dict, w_graph_list, executor = ScriptExecutor(), modify_graph=True, place_other_objects=True, id_mapping={}, **info):
 
     helper.initialize(graph_dict)
     script, precond = modify_objects_unity2script(helper, script, precond)
@@ -204,7 +204,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     init_graph_dict = copy.deepcopy(graph_dict)
     graph = EnvironmentGraph(graph_dict)
     name_equivalence = utils.load_name_equivalence()
-    executor = ScriptExecutor(graph, name_equivalence)
+    # executor = ScriptExecutor(graph, name_equivalence)
     executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
@@ -218,8 +218,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
-def check_script(program_str, precond, graph_path, inp_graph_dict=None, 
-                 modify_graph=True, id_mapping={}, info={}):
+def check_script(program_str, precond, graph_path, script_executor = ScriptExecutor(), inp_graph_dict=None, modify_graph=True, id_mapping={}, info={}):
 
     helper = utils.graph_dict_helper(max_nodes=max_nodes)
 
@@ -232,11 +231,11 @@ def check_script(program_str, precond, graph_path, inp_graph_dict=None,
         graph_dict = utils.load_graph_dict(graph_path)
     else:
         graph_dict = inp_graph_dict
-    message,message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
-        helper, script, precond, graph_dict, w_graph_list=True, modify_graph=modify_graph,
+    message, message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
+        helper, script, precond, graph_dict, w_graph_list=True, executor = script_executor, modify_graph=modify_graph,
         id_mapping=id_mapping, place_other_objects=False, **info)
 
-    return message, message_params, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
+    return message, message_params, executable, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
 
 
 def check_original_script(inp):

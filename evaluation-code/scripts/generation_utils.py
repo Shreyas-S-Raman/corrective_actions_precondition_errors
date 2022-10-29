@@ -453,7 +453,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in final_translated_actions):
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -627,13 +627,13 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
         #take a single step/action in the VH scene
         try:
-            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, executed_flag, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 
         #failure check 6: executability error
-        if not 'is executable' in message:
+        if not executed_flag:
             executed = False
             check_script_error = message
 
@@ -755,7 +755,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in final_translated_actions):
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -953,14 +953,14 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         
         #take a single step/action in the VH scene
         try:
-            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, executed_flag, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 
         
         #failure check 6: executability error
-        if not 'is executable' in message:
+        if not executed_flag:
             executed = False
             
             check_script_error = message
@@ -1067,7 +1067,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if translated_action in final_translated_actions:
+            if translated_action in all_translated_actions:
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -1249,13 +1249,13 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         #take a single step/action in the VH scene
         try:
-            message, message_params, graph_dict, ____, prev_graph_dict, modified_script, id_mapping = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, executed_flag, graph_dict, ____, prev_graph_dict, modified_script, id_mapping = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 
         #failure check 6: executability error
-        if not 'is executable' in message:
+        if not executed_flag:
             executed = False
             check_script_error = message
 
