@@ -43,7 +43,7 @@ class ExecutionInfo(object):
         return '' if self.current_line is None else str(self.current_line)
 
     def get_error_string(self):
-        return ','.join(self.messages)
+        return ';'.join(self.messages)
     
     def get_error_params(self):
         return self.message_params
