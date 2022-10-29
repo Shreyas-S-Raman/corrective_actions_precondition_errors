@@ -165,7 +165,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, executo
         
         helper.set_to_default_state(graph_dict, None, id_checker=lambda v: True)
         
-        id_mapping, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+        id_mapping, new_obj_keys, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
         
         info = {'room_mapping': room_mapping}
         objects_id_in_script = [v for v in id_mapping.values()]
@@ -247,11 +247,14 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
     if first_step:
         helper.set_to_default_state(graph_dict, None, id_checker=lambda v: True)
     
-    id_mapping, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+    id_mapping, new_obj_keys, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
     
     info = {'room_mapping': room_mapping}
+    new_objects_id_in_script = [id_mapping[k] for k in new_obj_keys]
     objects_id_in_script = [v for v in id_mapping.values()]
-    helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in objects_id_in_script)
+    
+    #at each iteration, only reset state (to default) for NEWLY introduced objects
+    helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in new_objects_id_in_script)
 
     ## place the random objects (id from 2000)
     if place_other_objects:
@@ -264,12 +267,12 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
     ## set relation and state from precondition
     if first_step:
         helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=False)
-        random_objects_id = helper.random_objects_id
         helper.open_all_doors(graph_dict)
         helper.ensure_light_on(graph_dict, id_checker=lambda v: v not in objects_id_in_script)
 
     # prepare the precond in the end so that its change won't be overwritten
     helper.prepare_from_precondition(precond, id_mapping, graph_dict)
+    random_objects_id = helper.random_objects_id
     helper.check_binary(graph_dict, id_checker=lambda v: v >= random_objects_id, verbose=False)
     helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=True)
     
