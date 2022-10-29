@@ -737,7 +737,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             #modify_objects_unity2script(helper, script, precond)
 
-            overall_score = _get_score_product(matching_score, logprob)
+            overall_score = _get_score_sum(matching_score, logprob)
             '''matching_score + beta * log_prob'''
 
            
@@ -952,11 +952,11 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         
         #take a single step/action in the VH scene
-        try:
-            message, message_params, executed_flag, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+        #try:
+        message, message_params, executed_flag, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
-        except Exception as e:
-            message = "{}: {}".format(e.__class__.__name__, e)
+        #except Exception as e:
+        #    message = "{}: {}".format(e.__class__.__name__, e)
 
         
         #failure check 6: executability error

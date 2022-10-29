@@ -261,7 +261,9 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
         max_node_to_place = max_nodes - len(graph_dict["nodes"])
         n = random.randint(max_node_to_place - 20, max_node_to_place)
         helper.add_random_objs_graph_dict(graph_dict, n=max(n, 0))
-        helper.set_to_default_state(graph_dict, None, id_checker=lambda v: v >= 2000)
+
+        random_objects_id = helper.random_objects_id
+        helper.set_to_default_state(graph_dict, None, id_checker=lambda v: v >= random_objects_id)
         helper.random_change_object_state(id_mapping, graph_dict, id_checker=lambda v: v not in objects_id_in_script)
 
     ## set relation and state from precondition
@@ -272,9 +274,7 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
 
     # prepare the precond in the end so that its change won't be overwritten
     helper.prepare_from_precondition(precond, id_mapping, graph_dict)
-    random_objects_id = helper.random_objects_id
-    helper.check_binary(graph_dict, id_checker=lambda v: v >= random_objects_id, verbose=False)
-    helper.check_binary(graph_dict, id_checker=lambda v: True, verbose=True)
+    
     
     assert len(graph_dict["nodes"]) <= max_nodes
 
@@ -284,7 +284,7 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
         graph = EnvironmentGraph(graph_dict)
         name_equivalence = utils.load_name_equivalence()
         executor = ScriptExecutor(graph, name_equivalence)
-
+    pdb.set_trace()
     executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
