@@ -32,7 +32,7 @@ class SceneGym():
         #update step count
         self.steps += 1
 
-        return message, message_params, executable, self.graph_dict, self.steps, init_graph_dict, modified_script, id_mapping
+        return message, message_params, executable, self.graph_dict, self.steps, init_graph_dict, modified_script
 
     def backtrack_step(self):
 
