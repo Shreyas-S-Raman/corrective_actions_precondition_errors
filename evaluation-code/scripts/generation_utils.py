@@ -639,7 +639,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params)
 
             full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
             continue
@@ -967,7 +967,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params)
 
             full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
             ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)

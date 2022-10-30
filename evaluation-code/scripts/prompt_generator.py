@@ -24,7 +24,7 @@ class ErrorParsing():
     
     def _get_error_reason(self, error_message, error_cause, error_params, obj, action):
 
-        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params[0], obj, action)
+        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params, obj, action)
     
     def _parse_precond_error(self, error_message, obj, action):
 
