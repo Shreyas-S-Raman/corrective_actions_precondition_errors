@@ -284,7 +284,7 @@ def check_one_step(helper, script, precond, graph_dict, w_graph_list, executor =
         graph = EnvironmentGraph(graph_dict)
         name_equivalence = utils.load_name_equivalence()
         executor = ScriptExecutor(graph, name_equivalence)
-    pdb.set_trace()
+    #pdb.set_trace()
     executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
@@ -309,7 +309,7 @@ def check_step(program_str, precond, graph_path, script_executor, helper, inp_gr
     else:
         graph_dict = inp_graph_dict
     message, message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_step(
-        helper, script, precond, graph_dict, w_graph_list=True, executor = script_executor, first_step = first_step,
+        helper, script, precond, graph_dict, w_graph_list=True, executor = None, first_step = first_step,
         id_mapping=id_mapping, place_other_objects=False, **info)
 
     return message, message_params, executable, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script

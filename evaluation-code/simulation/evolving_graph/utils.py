@@ -470,7 +470,9 @@ class graph_dict_helper(object):
         for key in script.obtain_objects():
             if key not in objects_in_script:
                 objects_in_script[key] = id_mapping[key] if key in id_mapping else None
-
+        
+        for key in id_mapping.keys():
+            objects_in_script[key] = id_mapping[key]
         # set up the first room
         #location_precond = {tuple(i['location'][0]): i['location'][1][0] for i in filter(lambda v: 'location' in v, precond)}
         location_precond = {(i['location'][0][0], int(i['location'][0][1])): i['location'][1][0] for i in filter(lambda v: 'location' in v, precond)}

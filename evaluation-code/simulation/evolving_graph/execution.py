@@ -164,6 +164,7 @@ class _FindExecutor(ActionExecutor):
         current_obj = current_line.object()
 
         # select objects based on current_obj
+        pdb.set_trace()
         for node in state.select_nodes(current_obj):
             if self.check_find(state, node, info):
                 yield state.change_state(
@@ -192,6 +193,7 @@ class FindExecutor(ActionExecutor):
         current_line = script[0]
         info.set_current_line(current_line)
         current_obj = current_line.object()
+        pdb.set_trace()
         for node in state.select_nodes(current_obj):
             char_node = _get_character_node(state)
 
@@ -1306,7 +1308,7 @@ class ScriptExecutor(object):
                     break
 
     def execute(self, script: Script, init_changers: List[StateChanger]=None, w_graph_list: bool=True):
-
+        pdb.set_trace()
         info = self.info
         state = EnvironmentState(self.graph, self.name_equivalence, instance_selection=True)
         _apply_initial_changers(state, script, init_changers)
@@ -1317,6 +1319,7 @@ class ScriptExecutor(object):
                 graph_state_list.append(state.to_dict())
             
             future_script = script.from_index(i)
+            print(script.to_string())
             state = next(self.call_action_method(future_script, state, info), None)
             if state is None:
                 return False, prev_state, graph_state_list
