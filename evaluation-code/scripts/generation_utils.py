@@ -374,13 +374,13 @@ def iterative_api_request(example, task_prompt, api_params, sentence_model, acti
 '''
 Note: get good video output from VH for intermediate steps and final best plan
 '''
-def online_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
+def online_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
 
-    def _get_score_sum(matching_score, log_prob):
-        return matching_score + beta * log_prob
+    def _get_score_sum(matching_score, log_prob, mask):
+        return (matching_score + beta * log_prob)*mask
     
-    def _get_score_product(matching_score, log_prob):
-        return ((matching_score + 1.0)/2.0) * np.exp(log_prob)
+    def _get_score_product(matching_score, log_prob, mask):
+        return (((matching_score + 1.0)/2.0) * np.exp(log_prob))*mask
 
     def _format_api_output(output):
         # exclude examples
@@ -434,7 +434,29 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
             most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
             most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
-            overall_score = _get_score_product(matching_score, logprob)
+
+            '''checks if the action can be executed: masking'''
+            executable_mask = 1.0
+
+            if add_executable_mask:
+                program_line, ___ = str2program_list([translated_action])
+                parsed_program_line = arg2abstract(program_line)
+
+                try:
+                    preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
+                except ScriptFail as e:
+                    executable_mask = float('-inf')
+                try:
+                    message, __, __, __, __, __ = scene_environment.step([parsed_program_lines[-1]], preconditions)
+                    scene_environment.backtrack_step()
+
+                    if not 'is executable' in message:
+                        executable_mask = float('-inf')
+
+                except Exception as e:
+                    executable_mask = float('-inf')
+
+            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             '''indexes action list with most similar index for action'''
@@ -453,7 +475,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in final_translated_actions):
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -663,13 +685,13 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
-def online_api_request_one_error(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
+def online_api_request_one_error(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
 
-    def _get_score_sum(matching_score, log_prob):
-        return matching_score + beta * log_prob
+    def _get_score_sum(matching_score, log_prob, mask):
+        return (matching_score + beta * log_prob)*mask
     
-    def _get_score_product(matching_score, log_prob):
-        return ((matching_score + 1.0)/2.0)*np.exp(log_prob)
+    def _get_score_product(matching_score, log_prob, mask):
+        return (((matching_score + 1.0)/2.0)*np.exp(log_prob))*mask
 
     def _format_api_output(output):
         # exclude examples
@@ -731,16 +753,33 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             '''indexes action list with most similar index for action'''
             translated_action = action_list[most_similar_idx]
-            program_line, ___ = str2program_list([translated_action])
-            parsed_program_line = arg2abstract(program_line)
-            preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
+
+
+            '''checks if the action can be executed: masking'''
+            executable_mask = 1.0
+
+            if add_executable_mask:
+                program_line, ___ = str2program_list([translated_action])
+                parsed_program_line = arg2abstract(program_line)
+
+                try:
+                    preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
+                except ScriptFail as e:
+                    executable_mask = float('-inf')
+                try:
+                    message, __, __, __, __, __ = scene_environment.step([parsed_program_lines[-1]], preconditions)
+                    scene_environment.backtrack_step()
+
+                    if not 'is executable' in message:
+                        executable_mask = float('-inf')
+
+                except Exception as e:
+                    executable_mask = float('-inf')
 
             #modify_objects_unity2script(helper, script, precond)
 
-            overall_score = _get_score_product(matching_score, logprob)
+            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
-
-           
 
             if verbose:
                 print(f'** {generated_text} ({translated_action}; matching_score={matching_score:.2f}; mean_logprob={logprob:.2f}); overall={overall_score:.2f}')
@@ -755,7 +794,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in final_translated_actions):
+            if (translated_action in all_translated_actions):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -1067,7 +1106,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if translated_action in final_translated_actions:
+            if translated_action in all_translated_actions:
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)

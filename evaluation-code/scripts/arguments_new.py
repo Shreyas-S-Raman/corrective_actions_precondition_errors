@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 131
+    expID = 135
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -104,6 +104,7 @@ class Arguments:
 
 
     step_by_step = False #add 'Let's think step by step to prompt'
+    add_executable_mask = True #mask that only allows executable actions (in current state) to be chosen
     one_error = True
     resampling = False #promting only by resampling (next most viable step)
 
