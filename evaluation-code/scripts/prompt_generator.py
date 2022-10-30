@@ -190,7 +190,7 @@ class PromptGenerator(PromptContext):
             error_info = self._create_parsibility_prompt()
         else:
             #extract the cause for the error
-            error_cause = self.error_parser._get_error_reason(error_message, error_type, args, obj, action)
+            error_cause = self.error_parser._get_error_reason(error_message, error_type, args[0], obj, action)
 
             error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
 
