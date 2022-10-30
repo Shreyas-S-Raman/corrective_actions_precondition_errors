@@ -1,0 +1,7 @@
+[WALK] <dining_room> (1)
+[FIND] <oven> (1)
+[FIND] <cookingpot> (1)
+[PUTBACK] <cookingpot> (1) <oven> (1)
+[POUR] <water> (1) <cookingpot> (1)
+[FIND] <oven> (1)
+[TURNTO] <oven> (1)

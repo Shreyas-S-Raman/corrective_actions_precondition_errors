@@ -1,0 +1,5 @@
+[WALK] <home_office> (1)
+[WALK] <chair> (1)
+[FIND] <chair> (1)
+[SIT] <chair> (1)
+[FIND] <newspaper> (1)

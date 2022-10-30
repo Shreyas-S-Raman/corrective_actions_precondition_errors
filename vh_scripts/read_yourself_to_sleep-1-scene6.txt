@@ -1,0 +1,3 @@
+[WALK] <bed> (1)
+[WALK] <floor> (1)
+[PUTBACK] <pillow> (1) <novel> (1)

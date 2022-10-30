@@ -735,7 +735,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             parsed_program_line = arg2abstract(program_line)
             preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
 
-            modify_objects_unity2script(helper, script, precond)
+            #modify_objects_unity2script(helper, script, precond)
 
             overall_score = _get_score_product(matching_score, logprob)
             '''matching_score + beta * log_prob'''

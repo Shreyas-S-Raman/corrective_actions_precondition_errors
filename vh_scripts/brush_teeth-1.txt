@@ -1,0 +1,8 @@
+[FIND] <toothbrush> (1)
+[TURNTO] <toothbrush> (1)
+[POINTAT] <toothbrush> (1)
+[WASH] <toothbrush> (1)
+[TURNTO] <toothbrush> (1)
+[LOOKAT] <toothbrush> (1)
+[GRAB] <toothbrush> (1)
+[WALK] <bathroom> (1)
