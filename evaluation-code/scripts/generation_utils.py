@@ -390,6 +390,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
 
     def _generate_action(full_text, default_params, executed):
         '''tracks all options for generated text + translated actions for the current step'''
+        
         curr_generated = []
         curr_matching = []
         curr_logprobs = []
@@ -445,15 +446,18 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
                 try:
                     preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
                 except ScriptFail as e:
+                    
                     executable_mask = float('-inf')
                 try:
-                    message, __, __, __, __, __ = scene_environment.step([parsed_program_lines[-1]], preconditions)
+                    message, __, __, __, __, __ = scene_environment.step([parsed_program_line[-1]], preconditions)
                     scene_environment.backtrack_step()
 
                     if not 'is executable' in message:
+                        
                         executable_mask = float('-inf')
 
                 except Exception as e:
+                    
                     executable_mask = float('-inf')
 
             overall_score = _get_score_sum(matching_score, logprob, executable_mask)
@@ -706,6 +710,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
     def _generate_action(full_text, default_params, executed):
         '''tracks all options for generated text + translated actions for the current step'''
+        
         curr_generated = []
         curr_matching = []
         curr_logprobs = []
@@ -765,20 +770,23 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
                 try:
                     preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
                 except ScriptFail as e:
+                    
                     executable_mask = float('-inf')
                 try:
-                    message, __, __, __, __, __ = scene_environment.step([parsed_program_lines[-1]], preconditions)
+                    message, __, __, __, __, __ = scene_environment.step([parsed_program_line[-1]], preconditions)
                     scene_environment.backtrack_step()
 
                     if not 'is executable' in message:
+                        
                         executable_mask = float('-inf')
 
                 except Exception as e:
+                    
                     executable_mask = float('-inf')
 
             #modify_objects_unity2script(helper, script, precond)
 
-            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
+            overall_score = _get_score_product(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             if verbose:
@@ -824,6 +832,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         '''compare best score with cutoff threshold: cutoff threshold not implemented by default
            best_idx: proposed action/step with best overall score
         '''
+        
         highest_score = np.max(curr_overall)
         best_idx = np.argsort(curr_overall)[-1]
         if cutoff_threshold != -100 and highest_score < cutoff_threshold:

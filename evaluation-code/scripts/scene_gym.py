@@ -34,8 +34,7 @@ class SceneGym():
 
     def backtrack_step(self):
 
-        self.graph_dict = self.prev_graphs_stack.pop()
-        self.steps -= 1
+        (self.steps, self.graph_dict) = self.prev_graphs_stack.pop()
 
         return self.graph_dict
 

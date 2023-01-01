@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 135
+    expID = 137
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -54,7 +54,7 @@ class Arguments:
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.7
+    api_cutoff_threshold = 0.5 #original : 0.7
     api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 
@@ -104,7 +104,7 @@ class Arguments:
 
 
     step_by_step = False #add 'Let's think step by step to prompt'
-    add_executable_mask = True #mask that only allows executable actions (in current state) to be chosen
+    add_executable_mask = False #mask that only allows executable actions (in current state) to be chosen
     one_error = True
     resampling = False #promting only by resampling (next most viable step)
 

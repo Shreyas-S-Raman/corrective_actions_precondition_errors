@@ -431,6 +431,9 @@ def construct_generation_dict(args, evaluated_scenes):
     generation_info = dict()
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
+        task = load_txt(test_path).strip().split('\n')[0]
+
+        
         for scene in evaluated_scenes:
             #pdb.set_trace()
             lines = load_txt(test_path).strip().split('\n')
