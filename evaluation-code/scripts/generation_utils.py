@@ -913,13 +913,13 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         #failure check 1: no_gen_terminate
         if nogen_terminate:
-            executed = True
+            
             no_gen_error = error_message
             break
 
         #failure check 2: score terminate
         if score_terminate:
-            executed = True
+            
             score_error = error_message
             break
 
@@ -1031,14 +1031,13 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
     
-    if total_steps==0:
-        info = {'parsed_program': None, 'executed': False, 'scene_path': scene_path, 'init_graph_dict': scene_environment.initial_graph_dict,'modified_program': None,'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error': empty_program_error, 'total_steps':total_steps, 'final_steps': curr_step, 'no_gen_error': no_gen_error, 'score_error':score_error, 'all_errors': '\n'.join(all_errors)}
-
-    else:
-        info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+    
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join            (program_lines).strip(), 
+        'executed': False if total_steps==0 else executed, 'percent_executed': 0.0 if total_steps==0 else curr_step/total_steps,
+        'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step,  'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
@@ -1205,6 +1204,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     all_errors = []
 
     curr_step = 0; total_steps = 0; curr_idx = 0
+    num_executed = 0
     executed = True
     
 
@@ -1318,14 +1318,11 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         final_translated_actions.append(translated_action)
 
     
-    if total_steps==0:
-        info = {'parsed_program': None, 'executed': False, 'scene_path': scene_path, 'init_graph_dict': scene_environment.initial_graph_dict,'modified_program': None,'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error, 'empty_program_error': empty_program_error, 'total_steps':total_steps, 'final_steps': curr_step, 'no_gen_error': no_gen_error, 'score_error':score_error, 'all_errors': '\n'.join(all_errors)}
-
-    else:
-        info = { 'parsed_program': '\n'.join(program_lines).strip(), 'executed': executed, 'scene_path': scene_path,
-        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': modified_script.to_string(),
+    
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
