@@ -122,8 +122,7 @@ def evaluate_script(kwargs):
 
         check_script() runs the program_lines on the scene graph whilst checking precond
         '''
-        (message, init_graph_dict, final_state, graph_state_list, input_graph,
-                                id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
+        (message, __, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
                                         program_lines,
                                         precond,
                                         scene_path,
@@ -974,13 +973,15 @@ def update_info_with_execution(generation_info, execution_results):
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
 
     for (task, desc, scene), info in generation_info.items():
         for script_path, script_results in script2results.items():
             if info['parsed_save_path'] == script_path:
                 info['scene_nums'] = [scene_num for scene_num in script_results.keys()]
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
+
+                info['percent_executed'] = [scene_result['percent_executed'] for scene_result in script_results.values()]
 
                 # log the error information for execution across scenes
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]

@@ -125,8 +125,8 @@ def evaluate_script(kwargs):
 
         check_script() runs the program_lines on the scene graph whilst checking precond
         '''
-        (message, init_graph_dict, final_state, graph_state_list, input_graph,
-                                id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
+        
+        (message, __, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
                                         program_lines,
                                         precond,
                                         scene_path,
@@ -351,21 +351,21 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
     #evaluate the n-step similarity for each task
     task_nstep_similarity_sum = dict()
 
-    for (task, desc, scene), info in generation_info.items():
+    for (task, desc), info in generation_info.items():
 
         try:
             program_lines = info['parsed_program_lines']
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
-        if executable_only and info['executed'] is False:
-            stop_idx = int(info['percent_executed']*len(program_lines))
+        if executable_only and np.any(info['executed'] is False):
+            stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
         
 
         #if program is empty assign 0.0 n-step similarity
         if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
-            task_nstep_similarity_sum[(task, desc, scene)] = 0.0
+            task_nstep_similarity_sum[(task, desc)] = 0.0
     
         else:
             program_lines = preprocess_program_lines_for_lcs(program_lines)
@@ -391,13 +391,13 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
 
             precision_sum = (precision_sum/n)*brevity_pen
 
-            assert (task, desc, scene) not in task_nstep_similarity_sum
+            assert (task, desc) not in task_nstep_similarity_sum
             
 
-            task_nstep_similarity_sum[(task, desc, scene)] = precision_sum
+            task_nstep_similarity_sum[(task, desc)] = precision_sum
             
 
-        info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc, scene)]
+        info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc)]
             
 
     avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
@@ -468,21 +468,21 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
     #evaluate the n-step similarity for each task
     task_pairwise_precision = dict()
 
-    for (task, desc, scene), info in generation_info.items():
+    for (task, desc), info in generation_info.items():
 
         try:
             program_lines = info['parsed_program_lines']
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
-        if executable_only and info['executed'] is False:
-            stop_idx = int(info['percent_executed']*len(program_lines))
+        if executable_only and np.any(info['executed'] is False):
+            stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
         
 
         #if program is empty assign 0.0 n-step similarity
         if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
-            task_pairwise_precision[(task, desc, scene)] = 0.0
+            task_pairwise_precision[(task, desc)] = 0.0
     
         else:
             program_lines = preprocess_program_lines_for_lcs(program_lines)
@@ -501,13 +501,13 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
             precision_sum = _compute_precision(program_lines, gt_program_lines)
             precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
 
-            assert (task, desc, scene) not in task_pairwise_precision
+            assert (task, desc) not in task_pairwise_precision
             
 
-            task_pairwise_precision[(task, desc, scene)] = precision_sum
+            task_pairwise_precision[(task, desc)] = precision_sum
             
 
-        info['pairwise_precision'] = task_pairwise_precision[(task, desc, scene)]
+        info['pairwise_precision'] = task_pairwise_precision[(task, desc)]
             
 
     avg_pairwise_precision = np.mean(list(task_pairwise_precision.values()))
@@ -530,9 +530,9 @@ def evaluate_lcs_score(generation_info, verbose=False, executable_only=False):
         
 
         #if executable_only and the script is not executable, then get the portion of program_lines that are executable
-        if executable_only and info['executed'] is False:
+        if executable_only and np.any(info['executed'] is False):
             
-            stop_idx = int(info['percent_executed']*len(program_lines))
+            stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
             
 
@@ -928,15 +928,14 @@ def update_info_with_execution(generation_info, execution_results):
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'],
-                                                            execution_error=r['execution_error'],
-                                                            precond_error=r['precond_error'])
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], execution_error=r['execution_error'], precond_error=r['precond_error'])
 
     for (task, desc), info in generation_info.items():
         for script_path, script_results in script2results.items():
             if info['parsed_save_path'] == script_path:
                 info['scene_nums'] = [scene_num for scene_num in script_results.keys()]
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
+                info['percent_executed'] = [scene_result['percent_executed'] for scene_result in script_results.values()]
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]
                 info['precond_error'] = [scene_result['precond_error'] for scene_result in script_results.values()]
 
