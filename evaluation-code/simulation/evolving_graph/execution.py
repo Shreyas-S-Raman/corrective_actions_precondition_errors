@@ -1319,12 +1319,12 @@ class ScriptExecutor(object):
             future_script = script.from_index(i)
             state = next(self.call_action_method(future_script, state, info), None)
             if state is None:
-                return False, prev_state, graph_state_list
+                return False, prev_state, graph_state_list, i
                 
         if w_graph_list:
             graph_state_list.append(state.to_dict())
 
-        return True, state, graph_state_list
+        return True, state, graph_state_list, len(script)
 
     @classmethod
     def call_action_method(cls, script: Script, state: EnvironmentState, info: ExecutionInfo):

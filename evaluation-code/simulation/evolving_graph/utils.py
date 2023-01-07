@@ -463,13 +463,18 @@ class graph_dict_helper(object):
 
         # initialize the `objects_in_script`
         objects_in_script = {}
+        new_object_ids_in_script = []
         character_id = [i for i in filter(lambda v: v['class_name'] == 'character', graph_dict["nodes"])][0]["id"]
         key = ('character', 1)
         objects_in_script[key] = id_mapping[key] if key in id_mapping else character_id
 
         for key in script.obtain_objects():
+            if key not in objects_in_script and key not in id_mapping:
+                new_object_ids_in_script.append(key)
             if key not in objects_in_script:
                 objects_in_script[key] = id_mapping[key] if key in id_mapping else None
+
+            
 
         # set up the first room
         #location_precond = {tuple(i['location'][0]): i['location'][1][0] for i in filter(lambda v: 'location' in v, precond)}
@@ -531,7 +536,7 @@ class graph_dict_helper(object):
             for parameter in script_line.parameters:
                 parameter.instance = objects_in_script[(parameter.name, parameter.instance)]
                 
-        return objects_in_script, first_room, room_mapping
+        return objects_in_script, new_object_ids_in_script, first_room, room_mapping
 
     def prepare_from_precondition(self, precond, objects_in_script, graph_dict):
 

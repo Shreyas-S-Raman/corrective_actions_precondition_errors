@@ -166,7 +166,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
         # door_states = [n for n in graph_dict['nodes'] if n['class_name'] == 'door'][0]['states']
         helper.set_to_default_state(graph_dict, None, id_checker=lambda v: True)
         # print([n for n in graph_dict['nodes'] if n['class_name'] == 'fax_machine'])
-        id_mapping, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+        id_mapping, new_obj_ids, first_room, room_mapping = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
         # print([n for n in graph_dict['nodes'] if n['class_name'] == 'fax_machine'])
         info = {'room_mapping': room_mapping}
         objects_id_in_script = [v for v in id_mapping.values()]
@@ -198,14 +198,27 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
         assert len(graph_dict["nodes"]) <= max_nodes
     
     elif len(id_mapping) != 0:
-        # Assume that object mapping specify all the objects in the scripts
+
+        id_mapping, new_obj_ids, ___, ____ = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+
+        #only reset stte for new objects from script
+        new_objects_in_script = [id_mapping[v] for v in new_obj_ids]
+
+        helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in new_objects_in_script)
+        
+        #use existing id_mapping to modify script/grph
         helper.modify_script_with_specified_id(script, id_mapping, **info)
+
+        #prepare the precond in the end so that changes to graph_dict and id_mapping won't be overwritten
+        helper.prepare_from_precondition(precond, id_mapping, graph_dict)
+
+        #NOTE: do not reset any node states if modify_graph is false
 
     init_graph_dict = copy.deepcopy(graph_dict)
     graph = EnvironmentGraph(graph_dict)
     name_equivalence = utils.load_name_equivalence()
     executor = ScriptExecutor(graph, name_equivalence)
-    executable, final_state, graph_state_list = executor.execute(script, w_graph_list=w_graph_list)
+    executable, final_state, graph_state_list, final_step_no = executor.execute(script, w_graph_list=w_graph_list)
 
     if executable:
         message = 'Script is executable'
@@ -215,7 +228,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     #extract + return the parameters used to generate the error
     error_parameters = executor.info.get_error_params()
     
-    return message, error_parameters, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, script
+    return message, error_parameters, executable, final_step_no/len(script), init_graph_dict, final_state, graph_state_list, id_mapping, info, script
 
 
 def check_script(program_str, precond, graph_path, inp_graph_dict=None, 
@@ -226,17 +239,18 @@ def check_script(program_str, precond, graph_path, inp_graph_dict=None,
     try:
         script = read_script_from_list_string(program_str)
     except ScriptParseException:
-        return None, None, None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, None, None, 0.0
 
     if inp_graph_dict is None:
         graph_dict = utils.load_graph_dict(graph_path)
     else:
         graph_dict = inp_graph_dict
-    message,message_params, executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
+    message,message_params, executable, percent_executable, init_graph_dict, final_state, graph_state_list, id_mapping, info, modif_script = check_one_program(
         helper, script, precond, graph_dict, w_graph_list=True, modify_graph=modify_graph,
         id_mapping=id_mapping, place_other_objects=False, **info)
 
-    return message, message_params, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script
+    
+    return message, message_params, init_graph_dict, final_state, graph_state_list, graph_dict, id_mapping, info, helper, modif_script, percent_executable
 
 
 def check_original_script(inp):
@@ -261,7 +275,7 @@ def check_original_script(inp):
 
     precond = json.load(open(precond_path))
 
-    message, message_params, executable, _, graph_state_list, id_mapping, _, _ = check_one_program(helper, script, precond, graph_dict, w_graph_list=True)
+    message, message_params, executable, percent_executable, _, graph_state_list, id_mapping, _, _ = check_one_program(helper, script, precond, graph_dict, w_graph_list=True)
     if executable and dump:
         dump_one_data(txt_file, script, graph_state_list, id_mapping, graph_path)
 
@@ -335,7 +349,7 @@ def check_whole_set(dir_path, graph_path):
 
         for input, result in zip(mp_inputs, results):
             i_txt_file, i_graph_path = input
-            script, message, executable, _, _ = result
+            script, message, executable, percent_executable, _, _ = result
             if script is None:
                 not_parsable_programs.append(i_txt_file)
                 continue

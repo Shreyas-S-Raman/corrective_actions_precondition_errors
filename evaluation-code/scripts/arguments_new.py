@@ -18,13 +18,13 @@ class Arguments:
     DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds')
 
     '''experiment configs'''
-    debug = False #original : False
+    debug = True #original : False
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 137
+    expID = 1000
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -73,7 +73,7 @@ class Arguments:
 
 
     '''Re prompting configs'''
-    online_planning = True
+    online_planning = False
     
     prompt_template = 1
     custom_cause = True
