@@ -339,12 +339,19 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
                 gt_windows[gt_window] += 1
         
 
-        precision = 0.0; precision_denom = np.sum(gen_windows.values())
+        precision = 0.0; precision_denom = np.sum(len(gen_windows.values()))
 
         for window in gen_windows.keys():
-            precision += min(gen_windows[window], gt_windows[window] if window in gt_window else 0.0)
+            precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
         
         return precision/precision_denom
+
+    def _get_sliding_windows(array, window_size):
+        start = 0
+
+        sub_windows = (start + np.expand_dims(np.arange(window_size),0) + np.expand_dims(np.arange(len(array)-window_size+1), 0).T)
+        
+        return array[sub_windows]
 
 
 
@@ -358,7 +365,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
-        if executable_only and np.any(info['executed'] is False):
+        if executable_only and False in info['executed']:
             stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
         
@@ -373,17 +380,17 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
             gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
             
             mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
-            brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
+            brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
 
             precision_sum = 0.0
 
             for i in range(1, n+1):
                 
                 # shape: (num_windows , n)
-                n_step_windows = np.lib.stride_tricks.sliding_window_view(program_lines, i)
+                n_step_windows = _get_sliding_windows(np.array(program_lines), i)
                 
                 # shape: (num_examples, num_windows, n)
-                n_step_gt_windows = [np.lib.stride_tricks.sliding_window_view(line, i) for line in gt_program_lines]
+                n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
 
 
                 precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
@@ -475,7 +482,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
-        if executable_only and np.any(info['executed'] is False):
+        if executable_only and False in info['executed']:
             stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
         
@@ -530,7 +537,7 @@ def evaluate_lcs_score(generation_info, verbose=False, executable_only=False):
         
 
         #if executable_only and the script is not executable, then get the portion of program_lines that are executable
-        if executable_only and np.any(info['executed'] is False):
+        if executable_only and False in info['executed']:
             
             stop_idx = int(max(info['percent_executed'])*len(program_lines))
             program_lines = program_lines[:stop_idx]
@@ -823,7 +830,7 @@ def main(args):
 
     # log generation info
     generation_info = update_info_with_execution(generation_info, execution_results)
-
+    pdb.set_trace()
     # log to wandb ========================================================
     # log executability
     executability = sum([r['executed'] for r in execution_results]) / len(execution_results)

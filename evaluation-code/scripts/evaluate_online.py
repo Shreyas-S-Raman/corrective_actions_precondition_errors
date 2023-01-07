@@ -480,10 +480,10 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
                 gt_windows[gt_window] += 1
         
 
-        precision = 0.0; precision_denom = np.sum(gen_windows.values())
+        precision = 0.0; precision_denom = np.sum(list(gen_windows.values()))
 
         for window in gen_windows.keys():
-            precision += min(gen_windows[window], gt_windows[window] if window in gt_window else 0.0)
+            precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
         
         return precision/precision_denom
 
@@ -514,7 +514,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
             gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
             
             mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
-            brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
+            brevity_pen = min(1, np.exp( (1 - len(program_lines) )/mean_gt_length) )
 
             precision_sum = 0.0
 
