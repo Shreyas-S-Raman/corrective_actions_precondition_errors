@@ -442,7 +442,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
                 for i in range(len(lines[k])):
                     for j in range(i+1, len(lines[k])):
 
-                        pair = ' '.join([lines[i], lines[j]])
+                        pair = ' '.join([lines[k][i], lines[k][j]])
 
                         if pair not in output_counts:
                             pair_counts[pair] = 0
@@ -854,7 +854,7 @@ def main(args):
     print('** avg_lcs_ep: {:.4f}'.format(avg_lcs_ep))
     
     #evaluate the n-step similarity score (with clipping)
-    n_step_similarity = evaluate_n_step_similarity(generation_info, n=4, executable_only=True)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3, executable_only=True)
 
     wandb.run.summary["n_step_similarity"] = n_step_similarity
     print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))

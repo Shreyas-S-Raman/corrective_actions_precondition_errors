@@ -487,6 +487,12 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
         
         return precision/precision_denom
 
+    def _get_sliding_windows(array, window_size):
+        start = 0
+
+        sub_windows = (start + np.expand_dims(np.arange(window_size),0) + np.expand_dims(np.arange(len(array)-window_size+1), 0).T)
+        
+        return array[sub_windows]
 
 
     #evaluate the n-step similarity for each task
@@ -521,10 +527,10 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
             for i in range(1, n+1):
                 
                 # shape: (num_windows , n)
-                n_step_windows = np.lib.stride_tricks.sliding_window_view(program_lines, i)
+                n_step_windows = _get_sliding_windows(program_lines, i)
                 
                 # shape: (num_examples, num_windows, n)
-                n_step_gt_windows = [np.lib.stride_tricks.sliding_window_view(line, i) for line in gt_program_lines]
+                n_step_gt_windows = [_get_sliding_windows(line, i) for line in gt_program_lines]
 
 
                 precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
@@ -882,7 +888,7 @@ def main(args):
     print('** avg_lcs_ep: {:.2f}'.format(avg_lcs))
 
     #evaluate the n-step similarity score (with clipping)
-    n_step_similarity = evaluate_n_step_similarity(generation_info, n=4)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3)
 
     wandb.run.summary["n_step_similarity"] = n_step_similarity
     print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))
