@@ -346,11 +346,67 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
     #pdb.set_trace()
     return results
 
-def evaluate_n_step_similarity(generation_info, n=4, executable_only = False):
+def evaluate_pairwise_precision(generation_info, executable_only=False):
+
+
+    def _generate_line_pair_counts(lines, gt=False):
+        
+        if gt is False:
+            output_counts = {}
+
+            for i in range(len(lines)):
+                for j in range(i+1, len(lines)):
+
+                    pair = ' '.join([lines[i], lines[j]])
+
+                    if pair not in output_counts:
+                        output_counts[pair] = 0
+                    
+                    output_counts[pair] += 1
+        
+        else:
+
+            output_counts = []
+
+            for k in range(len(lines)):
+
+                pair_counts = {}
+
+                for i in range(len(lines[k])):
+                    for j in range(i+1, len(lines[k])):
+
+                        pair = ' '.join([lines[i], lines[j]])
+
+                        if pair not in output_counts:
+                            pair_counts[pair] = 0
+                        
+                        pair_counts[pair] += 1
+                
+                output_counts.append(pair_counts)
+
+        return output_counts
+    
+    def _compute_precision(program_lines, gt_program_lines):
+
+        precision = 0.0
+
+        for gt_count_dict in gt_program_lines:
+
+
+            for pair in program_lines.keys():
+
+                precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
+        
+
+        return precision
+                
+
+
+
+
 
     #evaluate the n-step similarity for each task
-    task_nstep_similarity_sum = dict()
-    task_nstep_similarity_logsum = dict()
+    task_pairwise_precision = dict()
 
     for (task, desc, scene), info in generation_info.items():
 
@@ -359,11 +415,99 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only = False):
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
+        if executable_only and info['executed'] is False:
+            stop_idx = int(info['percent_executed']*len(program_lines))
+            program_lines = program_lines[:stop_idx]
+        
+
+        #if program is empty assign 0.0 n-step similarity
+        if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+            task_pairwise_precision[(task, desc, scene)] = 0.0
+    
+        else:
+            program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+            gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+
+
+            mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+            brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
+
+
+            program_lines = _generate_line_pair_counts(program_lines, gt=False)
+            gt_program_lines = _generate_line_pair_counts(gt_program_lines, gt = True)
+
+
+            precision_sum = _compute_precision(program_lines, gt_program_lines)
+            precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
+
+            assert (task, desc, scene) not in task_pairwise_precision
+            
+
+            task_pairwise_precision[(task, desc, scene)] = precision_sum
+            
+
+        info['pairwise_precision'] = task_pairwise_precision[(task, desc, scene)]
+            
+
+    avg_pairwise_precision = np.mean(list(task_pairwise_precision.values()))
+    
+
+    return avg_pairwise_precision
+
+    
+
+def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
+
+
+    def _get_precision(n_step_windows, n_step_gt_windows):
+
+        gen_windows = {}; gt_windows = {}
+
+        for i in range(len(n_step_windows)):
+            window = ' '.join(n_step_windows[i])
+
+            if window not in gen_windows:
+                gen_windows[window] = 0
+            gen_windows[window] += 1
+        
+        for i in range(len(n_step_gt_windows)):
+            for j in range(len(n_step_gt_windows[i])):
+                
+                gt_window = ' '.join(n_step_gt_windows[i][j])
+
+                if gt_window not in gt_windows:
+                    gt_windows[gt_window] = 0
+                gt_windows[gt_window] += 1
+        
+
+        precision = 0.0; precision_denom = np.sum(gen_windows.values())
+
+        for window in gen_windows.keys():
+            precision += min(gen_windows[window], gt_windows[window] if window in gt_window else 0.0)
+        
+        return precision/precision_denom
+
+
+
+    #evaluate the n-step similarity for each task
+    task_nstep_similarity_sum = dict()
+
+    for (task, desc, scene), info in generation_info.items():
+
+        try:
+            program_lines = info['parsed_program_lines']
+        except KeyError as e:
+            program_lines = load_txt(info['parsed_save_path']).split('\n')
+        
+        if executable_only and info['executed'] is False:
+            stop_idx = int(info['percent_executed']*len(program_lines))
+            program_lines = program_lines[:stop_idx]
+        
 
         #if program is empty assign 0.0 n-step similarity
         if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
             task_nstep_similarity_sum[(task, desc, scene)] = 0.0
-            task_nstep_similarity_logsum[(task, desc, scene)] = 0.0
     
         else:
             program_lines = preprocess_program_lines_for_lcs(program_lines)
@@ -373,35 +517,35 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only = False):
             mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
             brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
 
-            precision_sum = 0.0; log_precision = 0.0
+            precision_sum = 0.0
 
             for i in range(1, n+1):
-
+                
+                # shape: (num_windows , n)
                 n_step_windows = np.lib.stride_tricks.sliding_window_view(program_lines, i)
+                
+                # shape: (num_examples, num_windows, n)
+                n_step_gt_windows = [np.lib.stride_tricks.sliding_window_view(line, i) for line in gt_program_lines]
 
-                n_step_gt_windows = np.lib.stride_tricks.sliding_window_view(gt_program_lines, i, axis=1)
 
-
-                precision_sum += precision
-                log_precision += np.log(precision)
+                precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
             
 
             precision_sum = (precision_sum/n)*brevity_pen
-            log_precision = np.exp(log_precision/n)*brevity_pen
 
             assert (task, desc, scene) not in task_nstep_similarity_sum
-            assert (task, desc, scene) not in task_nstep_similarity_logsum
+            
 
             task_nstep_similarity_sum[(task, desc, scene)] = precision_sum
-            task_nstep_similarity_logsum[(task, desc, scene)] = log_precision
+            
 
-            info['n_step_similarity_sum'] = task_nstep_similarity_sum[(task, desc, scene)]
-            info['n_step_similarity_logsum'] = task_nstep_similarity_logsum[(task, desc, scene)]
+        info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc, scene)]
+            
 
     avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
-    avg_nstep_similarty_logsum = np.mean(list(task_nstep_similarity_logsum.values()))
+    
 
-    return avg_nstep_similarty_sum, avg_nstep_similarty_logsum
+    return avg_nstep_similarty_sum
 
         
 
@@ -707,12 +851,17 @@ def main(args):
             #pdb.set_trace()
             # save modified scripts for visualization
             save_txt(os.path.join(args.unity_parsed_save_path, '{}.txt'.format(title)), r['modified_program'])
+
+    #pdb.set_trace()
+    # log generation info
+    generation_info = update_info_with_execution(generation_info, execution_results)
+
     pdb.set_trace()
     # log to wandb ========================================================
     # log executability
-    percent_executed = sum([r['executed'] for r in execution_results]) / len(execution_results)
-    wandb.run.summary["executability"] = percent_executed
-    print('** executability: {:.2f}'.format(percent_executed))
+    executability = sum([r['executed'] for r in execution_results]) / len(execution_results)
+    wandb.run.summary["executability"] = executability
+    print('** executability: {:.2f}'.format(executability))
 
     avg_percent_executed = sum([r['percent_executed'] for r in execution_results])/len(execution_results)
     wandb.run.summary["avg_percent_executed"] = avg_percent_executed
@@ -734,12 +883,16 @@ def main(args):
     print('** avg_lcs_ep: {:.2f}'.format(avg_lcs))
 
     #evaluate the n-step similarity score (with clipping)
-    n_step_similarity_sum, n_step_similarity_prod = evaluate_n_step_similarity(generation_info, n=4)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=4)
 
-    wandb.run.summary["n_step_similarity_sum"] = n_step_similarity_sum
-    print('** n_step_similarity_sum: {:.2f}'.format(n_step_similarity_sum))
-    wandb.run.summary["n_step_similarity_product"] = n_step_similarity_prod
-    print('** n_step_similarity_prod: {:.2f}'.format(n_step_similarity_prod))
+    wandb.run.summary["n_step_similarity"] = n_step_similarity
+    print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))
+
+    #evaluate the pairwise precision score (with clipping)
+    pairwise_precision = evaluate_pairwise_precision(generation_info)
+
+    wandb.run.summary["pairwise_precision"] = pairwise_precision
+    print('** avg n_step_similarity: {:.2f}'.format(pairwise_precision))
 
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
@@ -752,7 +905,7 @@ def main(args):
     print('** avg_parsibility: {:.2f}'.format(avg_parsibility))
 
     # get normalized overall score for hparam sweep ranking
-    normalized_exec = normalize(percent_executed, min_v=.09, max_v=.88)
+    normalized_exec = normalize(executability, min_v=.09, max_v=.88)
     normalized_lcs = normalize(avg_lcs, min_v=.10, max_v=.24)
     overall_score = normalized_exec + normalized_lcs
     wandb.run.summary['normalized_exec'] = normalized_exec
@@ -762,12 +915,9 @@ def main(args):
     print('** normalized_lcs: {:.2f}'.format(normalized_lcs))
     print('** overall_score: {:.2f}'.format(overall_score))
 
-    #pdb.set_trace()
-    # log generation info
-    generation_info = update_info_with_execution(generation_info, execution_results)
 
     #pdb.set_trace() 
-    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed', 'lcs_ep', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
+    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed', 'lcs_ep', 'n_step_similarity', 'pairwise_precision','most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'final_steps', 'total_steps', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
         data_list = [task, desc, scene]
@@ -796,12 +946,14 @@ def main(args):
     wandb.run.summary["execution_infos"] = table
 
     wandb.log({
-        'avg_lcs': avg_lcs,
+        'avg_lcs_ep': avg_lcs,
         'avg_sketch_lcs': avg_sketch_lcs,
-        'avg_parsed_length': avg_parsed_length,
+        'avg_no_steps': avg_parsed_length,
+        'avg_num_replans': avg_num_replans,
         'avg_parsibility': avg_parsibility,
-        'percent_executed': percent_executed,
-        'avg_corrective_steps': avg_num_replans,
+        'avg_executability': executability,
+        'avg_percent_executed': avg_percent_executed,
+        'avg_n_step_similarity': n_step_similarity,
         'execution_infos': table,
         'normalized_exec': normalized_exec,
         'normalized_lcs': normalized_lcs,
