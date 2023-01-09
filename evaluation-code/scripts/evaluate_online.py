@@ -233,10 +233,12 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         elif not args.one_error:
+            
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
         else:
+            pdb.set_trace()
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)

@@ -393,7 +393,7 @@ class graph_dict_helper(object):
         return random.choice(available_rooms)
 
     def modify_script_with_specified_id(self, script, id_mapping, room_mapping):
-
+        
         # change the id in script
         for script_line in script:
             for parameter in script_line.parameters:
@@ -420,7 +420,7 @@ class graph_dict_helper(object):
                         on_off.set_node_state(node, "ON")
 
     def add_missing_object_from_script(self, script, precond, graph_dict, id_mapping):
-
+        
         equivalent_rooms = self.equivalent_rooms
         possible_rooms = self.possible_rooms
 

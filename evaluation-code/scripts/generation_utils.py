@@ -1001,8 +1001,9 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         
         #take a single step/action in the VH scene
         try:
+            pdb.set_trace()
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
-
+            pdb.set_trace()
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 

@@ -198,8 +198,8 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
         assert len(graph_dict["nodes"]) <= max_nodes
     
     elif len(id_mapping) != 0:
-
-        id_mapping, new_obj_ids, ___, ____ = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+        import pdb; pdb.set_trace()
+        id_mapping, new_obj_ids, first_room, ____ = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
 
         #only reset stte for new objects from script
         new_objects_in_script = [id_mapping[v] for v in new_obj_ids]
