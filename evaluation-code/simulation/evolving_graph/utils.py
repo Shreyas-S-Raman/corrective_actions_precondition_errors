@@ -462,7 +462,7 @@ class graph_dict_helper(object):
                     first_room = parameter.name
 
         # initialize the `objects_in_script`
-        objects_in_script = {}
+        objects_in_script = {k:v for (k,v) in id_mapping.items()}
         new_object_ids_in_script = []
         character_id = [i for i in filter(lambda v: v['class_name'] == 'character', graph_dict["nodes"])][0]["id"]
         key = ('character', 1)
