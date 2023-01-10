@@ -465,7 +465,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
                 precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
         
 
-        return precision
+        return precision/len(list(program_lines.keys()))
                 
 
 
@@ -498,7 +498,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
 
 
             mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
-            brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
+            brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
 
 
             program_lines = _generate_line_pair_counts(program_lines, gt=False)

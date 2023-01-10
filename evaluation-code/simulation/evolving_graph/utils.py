@@ -419,7 +419,7 @@ class graph_dict_helper(object):
                             node["states"].remove("OFF")
                         on_off.set_node_state(node, "ON")
 
-    def add_missing_object_from_script(self, script, precond, graph_dict, id_mapping):
+    def add_missing_object_from_script(self, script, precond, graph_dict, id_mapping, room_mapping=None):
         
         equivalent_rooms = self.equivalent_rooms
         possible_rooms = self.possible_rooms
@@ -431,16 +431,17 @@ class graph_dict_helper(object):
         available_name = list(set([node['class_name'] for node in available_nodes]))
 
         # create room mapping
-        room_mapping = {}
-        for room in possible_rooms:
-            nroom = room
-            rooms_tried = []
-            while nroom not in available_rooms_in_graph and nroom not in rooms_tried:
-                rooms_tried.append(nroom)
-                assert nroom in equivalent_rooms, "Not pre-specified mapping for room: {}".format(nroom)
-                nroom = equivalent_rooms[nroom]    
-            assert nroom in available_rooms_in_graph, "No equivalent room in graph for room: {}".format(nroom)
-            room_mapping[room] = nroom
+        if room_mapping is None:
+            room_mapping = {}
+            for room in possible_rooms:
+                nroom = room
+                rooms_tried = []
+                while nroom not in available_rooms_in_graph and nroom not in rooms_tried:
+                    rooms_tried.append(nroom)
+                    assert nroom in equivalent_rooms, "Not pre-specified mapping for room: {}".format(nroom)
+                    nroom = equivalent_rooms[nroom]    
+                assert nroom in available_rooms_in_graph, "No equivalent room in graph for room: {}".format(nroom)
+                room_mapping[room] = nroom
         
         # use room mapping to change the precond (in-place opetation)
         for precond_i in precond:

@@ -199,7 +199,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     
     elif len(id_mapping) != 0:
         import pdb; pdb.set_trace()
-        id_mapping, new_obj_ids, first_room, ____ = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping)
+        id_mapping, new_obj_ids, first_room, ____ = helper.add_missing_object_from_script(script, precond, graph_dict, id_mapping, info['room_mapping'])
 
         #only reset stte for new objects from script
         new_objects_in_script = set([id_mapping[v] for v in new_obj_ids])
@@ -207,7 +207,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
         helper.set_to_default_state(graph_dict, first_room, id_checker=lambda v: v in new_objects_in_script)
         
         #use existing id_mapping to modify script/grph
-        helper.modify_script_with_specified_id(script, id_mapping, **info)
+        #helper.modify_script_with_specified_id(script, id_mapping, **info)
 
         #prepare the precond in the end so that changes to graph_dict and id_mapping won't be overwritten
         helper.prepare_from_precondition(precond, id_mapping, graph_dict)
