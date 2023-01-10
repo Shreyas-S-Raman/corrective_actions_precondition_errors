@@ -670,7 +670,7 @@ def construct_generation_dict(args):
                 generation_info[(task, desc)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
-    pdb.set_trace()
+    
     return generation_info
 
 def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
@@ -830,7 +830,7 @@ def main(args):
 
     # log generation info
     generation_info = update_info_with_execution(generation_info, execution_results)
-    pdb.set_trace()
+    
     # log to wandb ========================================================
     # log executability
     executability = sum([r['executed'] for r in execution_results]) / len(execution_results)
@@ -956,7 +956,7 @@ if __name__ == '__main__':
     # do not enable wandb output
     os.environ["WANDB_SILENT"] = "true"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    pdb.set_trace()
+    
     args = get_args()
     wandb.config.update(args, allow_val_change=True)
     main(args)
