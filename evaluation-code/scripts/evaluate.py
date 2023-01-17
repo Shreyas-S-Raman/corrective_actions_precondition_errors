@@ -344,7 +344,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
         for window in gen_windows.keys():
             precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
         
-        return precision/precision_denom
+        return precision/precision_denom if precision_denom > 0.0 else 0.0
 
     def _get_sliding_windows(array, window_size):
         start = 0
@@ -465,7 +465,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
                 precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
         
 
-        return precision/len(list(program_lines.keys()))
+        return precision/len(list(program_lines.keys())) if len(list(program_lines.keys())) > 0.0 else 0.0
                 
 
 
@@ -854,16 +854,16 @@ def main(args):
     print('** avg_lcs_ep: {:.4f}'.format(avg_lcs_ep))
     
     #evaluate the n-step similarity score (with clipping)
-    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3, executable_only=True)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3, executable_only=False)
 
     wandb.run.summary["n_step_similarity"] = n_step_similarity
     print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))
 
     #evaluate the pairwise precision score (with clipping)
-    pairwise_precision = evaluate_pairwise_precision(generation_info, executable_only=True)
+    pairwise_precision = evaluate_pairwise_precision(generation_info, executable_only=False)
 
     wandb.run.summary["pairwise_precision"] = pairwise_precision
-    print('** avg n_step_similarity: {:.2f}'.format(pairwise_precision))
+    print('** avg pairwise precision: {:.2f}'.format(pairwise_precision))
 
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
@@ -885,7 +885,7 @@ def main(args):
     print('** overall_score: {:.4f}'.format(overall_score))
 
 
-    summary_keys = ['task', 'description', 'full_raw_text', 'matched_text', 'example_text', 'parsibility', 'executed', 'percent_executed' 'lcs', 'lcs_ep', 'n_step_similarity','pairwise_precision', 'most_similar_gt_program_text', 'execution_error', 'total_steps', 'parsed_text', 'precond_error', 'sketch_lcs', 'most_similar_gt_sketch_text']
+    summary_keys = ['task', 'description', 'full_raw_text', 'matched_text', 'example_text', 'parsibility', 'executed', 'percent_executed', 'lcs', 'lcs_ep', 'n_step_similarity','pairwise_precision', 'most_similar_gt_program_text', 'execution_error', 'total_steps', 'parsed_text', 'precond_error', 'sketch_lcs', 'most_similar_gt_sketch_text']
     table_data = []
     for (task, desc), info in generation_info.items():
         data_list = [task, desc]
@@ -921,6 +921,7 @@ def main(args):
         'avg_executability': executability,
         'avg_percent_executed': avg_percent_executed,
         'avg_n_step_similarity': n_step_similarity,
+        'avg_pairwise_precision': pairwise_precision,
         'execution_infos': table,
         'normalized_exec': normalized_exec,
         'normalized_lcs': normalized_lcs,

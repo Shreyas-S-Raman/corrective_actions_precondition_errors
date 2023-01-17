@@ -18,13 +18,13 @@ class Arguments:
     DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds')
 
     '''experiment configs'''
-    debug = True #original : False
+    debug = False #original : False
     skip_load = False #skip loading sentence model for faster debugging
     verbose = False
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1000
+    expID = 151
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -42,19 +42,19 @@ class Arguments:
     '''OpenAI API configs'''
     api_max_tokens = 10
     
-    api_temperature = 0.5 #0.3 default
+    api_temperature = 0.5 #0.5 best
     api_top_p = 0.9
     api_n = 10
     api_logprobs = 1
     api_echo = False
-    api_presence_penalty = 0.3
+    api_presence_penalty = 0.3 #0.3 best 
     api_frequency_penalty = 0.3 #original: 0.3
     api_best_of = 1
 
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.5 #original : 0.7
+    api_cutoff_threshold = 0.8 #0.5 best (for score sum)
     api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 
@@ -73,12 +73,12 @@ class Arguments:
 
 
     '''Re prompting configs'''
-    online_planning = False
+    online_planning = True
     
     prompt_template = 1
     custom_cause = True
     third_person = False
-    error_information = 'cause_1'
+    error_information = 'inference_1'
     suggestion_no = 1
 
     chosen_causal_reprompts = {

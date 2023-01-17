@@ -23,7 +23,7 @@ class SceneGym():
     def step(self, program_lines, precond):
 
         #NOTE: assign objects and modify internal graph only on first step
-        (message, message_params, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script, ___) = check_script(program_lines, precond, self.scene_path, inp_graph_dict=self.graph_dict, modify_graph=True if self.steps==0 else False, id_mapping=self.id_mapping, info=self.info)
+        (message, message_params, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script, ___) = check_script(program_lines, precond, self.scene_path, inp_graph_dict=self.graph_dict, modify_graph=True if self.steps==0 else False, id_mapping=self.id_mapping, info=self.info, graph_helper = self.graph_helper)
 
         #new graph dictionary is final dictionary in list of dicts
         self.prev_graphs_stack.append((self.steps, self.graph_dict))
@@ -32,6 +32,7 @@ class SceneGym():
         #update the assigned id_mapping and room mapping (in self.info) for objects from first step
         self.id_mapping = id_mapping
         self.info = info
+        self.graph_helper = graph_helper
 
         #update step count
         self.steps += 1
@@ -50,6 +51,7 @@ class SceneGym():
         self.graph_dict = env_graph.to_dict()
         self.id_mapping = {}
         self.info = {}
+        self.graph_helper = None
         self.scene_path = scene_path
 
         self.prev_graphs_stack = []

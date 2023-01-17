@@ -228,12 +228,13 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
     if args.iterative and not args.raw_lm:
 
         if args.resampling:
+            #pdb.set_trace()
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = resampling_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         elif not args.one_error:
-            
+            #pdb.set_trace() 
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
@@ -340,7 +341,8 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             #pdb.set_trace()
-
+            if i==50:
+                pdb.set_trace()
             info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
             results.append(info)
         bar.update(1)
@@ -376,7 +378,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
                 for i in range(len(lines[k])):
                     for j in range(i+1, len(lines[k])):
 
-                        pair = ' '.join([lines[i], lines[j]])
+                        pair = ' '.join([lines[k][i], lines[k][j]])
 
                         if pair not in output_counts:
                             pair_counts[pair] = 0
@@ -399,7 +401,7 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
                 precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
         
 
-        return precision
+        return precision/len(list(program_lines.keys())) if len(list(program_lines.keys())) > 0.0 else 0.0
                 
 
 
@@ -487,7 +489,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
         for window in gen_windows.keys():
             precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
         
-        return precision/precision_denom
+        return precision/precision_denom if precision_denom > 0 else 0.0
 
     def _get_sliding_windows(array, window_size):
         start = 0
@@ -529,10 +531,10 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
             for i in range(1, n+1):
                 
                 # shape: (num_windows , n)
-                n_step_windows = _get_sliding_windows(program_lines, i)
+                n_step_windows = _get_sliding_windows(np.array(program_lines), i)
                 
                 # shape: (num_examples, num_windows, n)
-                n_step_gt_windows = [_get_sliding_windows(line, i) for line in gt_program_lines]
+                n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
 
 
                 precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
@@ -898,7 +900,7 @@ def main(args):
     pairwise_precision = evaluate_pairwise_precision(generation_info)
 
     wandb.run.summary["pairwise_precision"] = pairwise_precision
-    print('** avg n_step_similarity: {:.2f}'.format(pairwise_precision))
+    print('** avg pairwise precision: {:.2f}'.format(pairwise_precision))
 
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
@@ -960,6 +962,7 @@ def main(args):
         'avg_executability': executability,
         'avg_percent_executed': avg_percent_executed,
         'avg_n_step_similarity': n_step_similarity,
+        'avg_pairwise_precision': pairwise_precision,
         'execution_infos': table,
         'normalized_exec': normalized_exec,
         'normalized_lcs': normalized_lcs,

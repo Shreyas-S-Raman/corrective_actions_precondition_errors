@@ -690,6 +690,8 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 def online_api_request_one_error(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
+    
+    
 
     def _get_score_sum(matching_score, log_prob, mask):
         return (matching_score + beta * log_prob)*mask
@@ -785,8 +787,8 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
                     executable_mask = float('-inf')
 
             #modify_objects_unity2script(helper, script, precond)
-
-            overall_score = _get_score_product(matching_score, logprob, executable_mask)
+            executable_mask = 1.0
+            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             if verbose:
@@ -1138,7 +1140,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
             error_message = f'No plan generated: model thinks it should terminate'
 
-            return None, None, nogen_terminate, score_terminate, error_message
+            return None, None, None, nogen_terminate, score_terminate, error_message
 
         # calculate most likely step ===================================
         '''compare best score with cutoff threshold: cutoff threshold not implemented by default
@@ -1208,7 +1210,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     num_executed = 0
     executed = True
     
-
+    #pdb.set_trace()
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
@@ -1298,7 +1300,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         #take a single step/action in the VH scene
         try:
-            message, message_params, graph_dict, ____, prev_graph_dict, modified_script, id_mapping = scene_environment.step([parsed_program_lines[-1]], preconditions)
+            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)

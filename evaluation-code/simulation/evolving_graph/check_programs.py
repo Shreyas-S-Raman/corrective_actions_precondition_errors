@@ -157,7 +157,8 @@ def translate_graph_dict(path):
 
 def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_graph=True, place_other_objects=True, id_mapping={}, **info):
 
-    helper.initialize(graph_dict)
+    if modify_graph:
+        helper.initialize(graph_dict)
     script, precond = modify_objects_unity2script(helper, script, precond)
     if modify_graph:
         ## add missing object from scripts (id from 1000) and set them to default setting
@@ -232,9 +233,12 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
 
 
 def check_script(program_str, precond, graph_path, inp_graph_dict=None, 
-                 modify_graph=True, id_mapping={}, info={}):
+                 modify_graph=True, id_mapping={}, info={}, graph_helper=None):
 
-    helper = utils.graph_dict_helper(max_nodes=max_nodes)
+    if graph_helper is None:
+        helper = utils.graph_dict_helper(max_nodes=max_nodes)
+    else:
+        helper = graph_helper
 
     try:
         script = read_script_from_list_string(program_str)
