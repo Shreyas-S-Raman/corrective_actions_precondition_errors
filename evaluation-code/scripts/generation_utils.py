@@ -1036,7 +1036,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     
     
     info = { 'parsed_program': None if total_steps==0 else '\n'.join            (program_lines).strip(), 
-        'executed': False if total_steps==0 else executed, 'percent_executed': 0.0 if total_steps==0 else curr_step/total_steps,
+        'executed': False if total_steps==0 else executed, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps,
         'scene_path': scene_path,
         'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
@@ -1322,7 +1322,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
     
     
-    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
+    
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 1.0 if (executed or total_steps==0) else  0.0, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
         'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}

@@ -340,9 +340,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         # only generate program if not already exists
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
-            #pdb.set_trace()
-            if i==50:
-                pdb.set_trace()
+            
             info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
             results.append(info)
         bar.update(1)
@@ -871,9 +869,15 @@ def main(args):
     wandb.run.summary["executability"] = executability
     print('** executability: {:.2f}'.format(executability))
 
+    #log closed loop percent executed
+    avg_percent_executed_inloop = sum([r['percent_executed_inloop'] for r in execution_results])/len(execution_results)
+    wandb.run.summary["avg_percent_executed_inloop"] = avg_percent_executed_inloop
+    print('** average percent executed (in-loop): {:.2f}'.format(avg_percent_executed_inloop))
+
+    #log percent executed on final plan
     avg_percent_executed = sum([r['percent_executed'] for r in execution_results])/len(execution_results)
     wandb.run.summary["avg_percent_executed"] = avg_percent_executed
-    print('** average percent executed: {:.2f}'.format(avg_percent_executed))
+    print('** average percent executed (final plan): {:.2f}'.format(avg_percent_executed_inloop))
 
     #log number of corrective steps
     avg_num_replans = sum(r['num_replans'] for r in execution_results) / len(execution_results)
@@ -925,7 +929,7 @@ def main(args):
 
 
     #pdb.set_trace() 
-    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed', 'lcs_ep', 'n_step_similarity', 'pairwise_precision','most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'final_steps', 'total_steps', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
+    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed','percent_executed_inloop', 'lcs_ep', 'n_step_similarity', 'pairwise_precision','most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'final_steps', 'total_steps', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
         data_list = [task, desc, scene]
@@ -961,6 +965,7 @@ def main(args):
         'avg_parsibility': avg_parsibility,
         'avg_executability': executability,
         'avg_percent_executed': avg_percent_executed,
+        'avg_percent_executed_inloop': avg_percent_executed_inloop,
         'avg_n_step_similarity': n_step_similarity,
         'avg_pairwise_precision': pairwise_precision,
         'execution_infos': table,
@@ -983,7 +988,7 @@ def update_info_with_execution(generation_info, execution_results):
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], percent_executed_inloop = r['percent_executed_inloop'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
 
     for (task, desc, scene), info in generation_info.items():
         for script_path, script_results in script2results.items():
@@ -992,6 +997,7 @@ def update_info_with_execution(generation_info, execution_results):
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
 
                 info['percent_executed'] = [scene_result['percent_executed'] for scene_result in script_results.values()]
+                info['percent_executed_inloop'] = [scene_result['percent_executed_inloop'] for scene_result in script_results.values()]
 
                 # log the error information for execution across scenes
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]

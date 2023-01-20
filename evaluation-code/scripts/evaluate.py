@@ -839,7 +839,7 @@ def main(args):
     
     avg_percent_executed = sum([r['percent_executed'] for r in execution_results]) / len(execution_results)
     wandb.run.summary["avg_percent_executed"] = avg_percent_executed
-    print('** average percent executed: {:.2f}'.format(avg_percent_executed))
+    print('** average percent executed (final plan): {:.2f}'.format(avg_percent_executed))
 
     # evaluate lcs score for full script
     avg_lcs, avg_sketch_lcs = evaluate_lcs_score(generation_info, verbose=False)
