@@ -373,12 +373,14 @@ class OpenExecutor(ActionExecutor):
             return False
 
         s = State.OPEN if self.close else State.CLOSED
+        s_err = State.CLOSE if self.close else State.OPEN
+
         if s not in node.states:
-            info.error('{} is not {}', 'unflipped_boolean_state', {'obj': node, 'state' : s.name.lower(), 'subtype':None})
+            info.error('{} is not {}', 'unflipped_boolean_state', {'obj': node, 'state' : s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
 
         if not self.close and State.ON in node.states:
-            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node,'state':'on', 'subtype':None})
+            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node,'state':'on', 'error_state':'on', 'subtype':None})
             return False
         return True
 
@@ -477,6 +479,7 @@ class SwitchExecutor(ActionExecutor):
 
     def check_switchable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         s = State.OFF if self.switch_on else State.ON
+        s_err = State.ON if self.switch_on else State.OFF
 
         if Property.HAS_SWITCH not in node.properties:
             info.error('{} does not have a switch', 'invalid_action', {'obj': node, 'subtype':'does not have a switch'})
@@ -488,10 +491,10 @@ class SwitchExecutor(ActionExecutor):
         #    info.error('{} does not have a free hand', _get_character_node(state))
         #    return False
         if s not in node.states:
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj' : node, 'state': 'not' + s.name.lower(), 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj' : node, 'state': 'not' + s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
         if self.switch_on and State.PLUGGED_OUT in node.states:
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'unplugged', 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'unplugged', 'error_state': 'unplugged', 'subtype':None})
             return False
         return True
 
@@ -633,7 +636,7 @@ class PutOffExecutor(ActionExecutor):
     def check_putoff(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if not state.evaluate(ExistsRelation(NodeInstance(node), Relation.ON, NodeInstanceFilter(char_node))):
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'not on' + char_node, 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'not on' + char_node, 'error_state': 'already on' + char_node, 'subtype':None})
             return False
         if Property.CLOTHES not in node.properties:
             info.error('{} is not clothes', 'invalid_action', {'obj': node, 'subtype': 'not clothes'})
@@ -744,7 +747,7 @@ class LieExecutor(ActionExecutor):
             info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         if State.LYING in char_node.states:
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj': char_node, 'state':'lying down', 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': char_node, 'state':'lying down', 'error_state':'lying down', 'subtype':None})
             return False
         if Property.LIEABLE not in node.properties:
             info.error('{} is not lieable', 'invalid_action', {'obj': node, 'subtype': 'lie down'})
@@ -967,6 +970,8 @@ class PlugExecutor(ActionExecutor):
 
     def check_plugable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         s = State.PLUGGED_OUT if self.plug_in else State.PLUGGED_IN
+        s_err = State.PLUGGED_IN if self.plug_in else State.PLUGGED_OUT
+
         if Property.HAS_PLUG not in node.properties:
             info.error('{} does not have a plug', 'invalid_action', {'obj':node,'subtype':'does not have a plug'})
             return False
@@ -977,10 +982,10 @@ class PlugExecutor(ActionExecutor):
             info.error('{} does not have a free hand', 'hands_full', {'character':_get_character_node(state), 'subtype':None})
             return False
         if s not in node.states:
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj':node, 'state': 'not' + s.name.lower(), 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj':node, 'state': 'not' + s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
         if not self.plug_in and State.ON in node.states:
-            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node, 'state':'on', 'subtype':None})
+            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node, 'state':'on', 'error_state':'on', 'subtype':None})
         return True
     
 

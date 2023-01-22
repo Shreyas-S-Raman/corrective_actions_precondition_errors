@@ -38,7 +38,7 @@ class CausalErrors:
     INTERNALLY_CONTAINED1 = ['the {} is inside something', ['obj']]
 
     #unflipped bool state: obj, state, subtype, type
-    UNFLIPPED_BOOL_STATE1 = ['{} is already {}', ['obj', 'state']]
+    UNFLIPPED_BOOL_STATE1 = ['{} is already {}', ['obj', 'error_state']]
 
     #hands full: character, subtype, type
     HANDS_FULL1 = ['I cannot {} {}. My hands are full', ['obj','action']]

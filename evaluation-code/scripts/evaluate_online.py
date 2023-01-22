@@ -330,11 +330,6 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
         
-        if query_task not in set(['Change sheets and pillow cases','Breakfast','Style hair','Organize','Get glass of milk','Play musical chairs','Push all chairs in','Wash face','Change clothes','Eat snacks and drink tea','Fix snack']):
-            continue
-
-        else:
-            pdb.set_trace()
         
         scene_path = args.scene_path_format.format(scene)
 
