@@ -68,12 +68,14 @@ class CausalErrors:
     #not holding: character, obj, subtype, type
     NOT_HOLDING1 = ['{} doesn\'t have the {}', ['character','obj']]
     NOT_HOLDING2 = ['{} don\'t have the {}', ['character','obj']]
+    NOT_HOLDING3 = ['{} not holding the {}', ['character','obj']]
 
     #not holding any: character, subtype, type
     NOT_HOLDING_ANY1 = ['{} not holding anything', ['character']]
 
     #not facing: character, obj, subtype, type
     NOT_FACING1 = ['{} not facing the {}',['character','obj']]
+    NOT_FACING2 = ['{} not turned to face the {}', ['character','obj']]
 
     #missing step: character, subtype, type
     MISSING_STEP1 = ['{} {}',['character','subtype']]

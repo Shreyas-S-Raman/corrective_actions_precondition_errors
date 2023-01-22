@@ -326,12 +326,31 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
     #create list of all scene paths (used to check executability)
     results = []
 
-    for i, (query_task, query_desc, scene) in enumerate(generation_info):
+    
 
+    for i, (query_task, query_desc, scene) in enumerate(generation_info):
+        
+        if query_task not in set(['Change sheets and pillow cases','Breakfast','Style hair','Organize','Get glass of milk','Play musical chairs','Push all chairs in','Wash face','Change clothes','Eat snacks and drink tea','Fix snack']):
+            continue
+
+        else:
+            pdb.set_trace()
+        
         scene_path = args.scene_path_format.format(scene)
 
         if args.use_similar_example:
-            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device)
+            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device, param_tuning = args.param_tuning)
+
+            if args.param_tuning:
+                
+                for idx in example_path_idx:
+
+                    if load_txt(args.example_paths[idx]).strip().split('\n')[0] != query_task:
+                        example_path_idx = idx
+                        break
+            else:
+                example_path_idx = example_path_idx[0]
+
             example_path = args.example_paths[example_path_idx]
         else:
             example_path = args.example_path
@@ -639,6 +658,11 @@ def construct_generation_dict(args, evaluated_scenes):
     #pdb.set_trace()
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
+    
+    #test = []
+    #target = ['Pick up', 'Eat', 'Hang up car keys', 'Drink', 'Put on coat', 'Wash sink', 'Answer door', 'Check email', 'Wash dishes with dishwasher', 'Clean  mirror', 'Walk through', 'Prepare Dinner', 'Shop', 'Clean sink', 'Turn on light', 'Write report', 'Wash dishes by hand', 'Text friends while sitting on couch', 'Movie', 'Get out dish', 'Straighten paintings on wall', 'Take off coat', 'Bring me red cookbook', 'Admire art', 'Computer work', 'Juggling', 'Let baby learn how to walk', 'Greet guests', 'Put on glasses', 'Rearrange photo frames', 'Plug in nightlight', 'Wash dishes', 'Add paper to printer', 'Sit', 'Play on laptop', 'Put in chair', 'Set up buffet area', 'Close door', 'Look out window', 'Put away clean clothes', 'Cutting', 'Do laundry', 'Gaze out window', 'Get ready for school', 'Answer emails', 'Get ready to leave', 'Read news', 'Write  school paper', 'Wake kids up', 'Lock door', 'Have snack', 'Get drink', 'Turking', 'Shredding', 'Send  email', 'Surf net', 'Watch  TV', 'Rain welcome', 'Change light', 'Write story', 'Turn night light on', 'Pull up carpet', 'Get ready for day', 'Pick up cat hair', 'Wash hands', 'Sweep hallway please', 'Put groceries in Fridge', 'Homework', 'Put toys away', 'Unload dishwasher', 'Oil dining room', 'Turn on TV', 'Open door', 'Shampoo hair', 'Hang with friends', 'Put umbrella away', 'Clean bathroom', 'Put away jackets', 'Open bathroom window', 'Read book', 'Spread table with appropriate supplies', 'Print out papers', 'Shave', 'Sent email', 'Throw away newspaper', 'Added meat to freezer', 'Clean', 'Set mail on table', 'Sit in chair', 'Say goodbye to guests leaving', 'Take dishes out of dishwasher', 'Shred receipts', 'Print out document', 'vacuum carpet', 'Bring dirty plate to sink', 'Shut front door', 'Cut bread', 'Load dishwasher', 'Re arrange office', 'Watch TV']
+    
+    
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
         task = load_txt(test_path).strip().split('\n')[0]

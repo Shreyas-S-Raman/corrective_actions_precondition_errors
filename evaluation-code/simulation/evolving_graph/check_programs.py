@@ -211,7 +211,7 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
         #helper.modify_script_with_specified_id(script, id_mapping, **info)
 
         #prepare the precond in the end so that changes to graph_dict and id_mapping won't be overwritten
-        helper.prepare_from_precondition(precond, id_mapping, graph_dict)
+        helper.prepare_from_precondition(precond, id_mapping, graph_dict, new_objects_in_script)
 
         #NOTE: do not reset any node states if modify_graph is false
 

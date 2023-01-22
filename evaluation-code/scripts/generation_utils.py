@@ -119,12 +119,13 @@ def construct_example(example_path, add_desc=False):
     else:
         return 'Task: {}\n{}\n\n'.format(title, program_english)
 
-def select_most_similar_example_idx(sentence_model, query_title, title_embedding, device):
+def select_most_similar_example_idx(sentence_model, query_title, title_embedding, device, param_tuning):
     """get the path to the most similar example from vh dataset"""
     if ':' in query_title:
         query_title = query_title[query_title.index(':') + 1:].strip()
-    most_similar_idx, _ = top_k_similar(sentence_model, query_title, title_embedding, device, top_k=1)
-    most_similar_idx = most_similar_idx[0]
+    
+    most_similar_idx, _ = top_k_similar(sentence_model, query_title, title_embedding, device, top_k=470 if param_tuning else 1)
+    #most_similar_idx = most_similar_idx[0]
     return most_similar_idx
 
 def top_k_similar(model, query_str, corpus_embedding, device, top_k=1):
@@ -132,6 +133,7 @@ def top_k_similar(model, query_str, corpus_embedding, device, top_k=1):
     translate orignal_action to the closest action in action_list using semantic similarity
     adapted from: https://towardsdatascience.com/semantic-similarity-using-transformers-8f3cb5bf66d6
     """
+    
     # encode sentence to get sentence embeddings
     query_embedding = model.encode(query_str, convert_to_tensor=True, device=device)
     # compute similarity scores of the sentence with the corpus
@@ -1037,7 +1039,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     
     info = { 'parsed_program': None if total_steps==0 else '\n'.join            (program_lines).strip(), 
         'executed': False if total_steps==0 else executed, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps,
-        'scene_path': scene_path,
+        'percent_executed': 1.0 if (executed and total_steps>0) else 0.0 ,'scene_path': scene_path,
         'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step,  'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
@@ -1323,7 +1325,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     
     
     
-    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 1.0 if (executed or total_steps==0) else  0.0, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 1.0 if (executed and total_steps>0) else  0.0, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
         'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
         'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}

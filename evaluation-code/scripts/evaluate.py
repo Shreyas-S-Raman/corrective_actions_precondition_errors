@@ -627,6 +627,8 @@ def construct_generation_dict(args):
     """init info dict to save relavent infos"""
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
+    
+    
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
         lines = load_txt(test_path).strip().split('\n')
@@ -670,14 +672,28 @@ def construct_generation_dict(args):
                 generation_info[(task, desc)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
-    
+     
     return generation_info
 
 def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
     bar = tqdm(total=len(generation_info))
-    for query_task, query_desc in generation_info:
+
+    for i, (query_task, query_desc) in enumerate(generation_info):
         if args.use_similar_example:
-            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device)
+            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device, param_tuning = args.param_tuning)
+            
+            if args.param_tuning:
+                
+                for idx in example_path_idx:
+
+                    example_task = load_txt(args.example_paths[idx]).strip().split('\n')[0]
+                    if example_task != query_task:
+                        example_path_idx = idx
+                        break
+
+            else:
+                example_path_idx = example_path_idx[0]
+            
             example_path = args.example_paths[example_path_idx]
         else:
             example_path = args.example_path
@@ -687,6 +703,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             generate_program((query_task, query_desc), example_path, sentence_model, action_list, action_list_embedding, generation_info, args)
         bar.update(1)
+    
 
 def transformers_engine(model_id, device, seed):
     from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
@@ -795,13 +812,14 @@ def main(args):
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))
     elif args.use_similar_example:
         print('creating title embedding for "use_similar_example"... ', end='')
-        titles = []
+        titles = set([])
         for example_path in args.example_paths:
             example = load_txt(example_path)
             program_lines = example.strip().split('\n')
             title = program_lines[0]
-            titles.append(title)
-        title_embedding = sentence_model.encode(titles, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
+            titles.add(title)
+        
+        title_embedding = sentence_model.encode(list(titles), batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
         # cache to device
         torch.save(title_embedding.detach().cpu(), args.title_embedding_path)
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))

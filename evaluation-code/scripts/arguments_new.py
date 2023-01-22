@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 151
+    expID = 1000
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -47,7 +47,7 @@ class Arguments:
     api_n = 10
     api_logprobs = 1
     api_echo = False
-    api_presence_penalty = 0.3 #0.3 best 
+    api_presence_penalty = 0.5 #0.3 best 
     api_frequency_penalty = 0.3 #original: 0.3
     api_best_of = 1
 
@@ -78,7 +78,7 @@ class Arguments:
     prompt_template = 1
     custom_cause = True
     third_person = False
-    error_information = 'inference_1'
+    error_information = 'cause_1'
     suggestion_no = 1
 
     chosen_causal_reprompts = {
@@ -92,9 +92,9 @@ class Arguments:
         'not_find': CausalErrors.NOT_FIND1,
         'invalid_action':CausalErrors.INVALID_ACTION1,
         'max_occupancy':CausalErrors.MAX_OCCUPANCY1,
-        'not_holding':CausalErrors.NOT_HOLDING1 if third_person else CausalErrors.NOT_HOLDING2,
+        'not_holding':CausalErrors.NOT_HOLDING3 if third_person else CausalErrors.NOT_HOLDING2,
         'not_holding_any':CausalErrors.NOT_HOLDING_ANY1,
-        'not_facing':CausalErrors.NOT_FACING1,
+        'not_facing':CausalErrors.NOT_FACING2,
         'missing_step':CausalErrors.MISSING_STEP1,
         'invalid_room':CausalErrors.INVALID_ROOM1
     }
@@ -107,6 +107,7 @@ class Arguments:
     add_executable_mask = False #mask that only allows executable actions (in current state) to be chosen
     one_error = True
     resampling = False #promting only by resampling (next most viable step)
+    param_tuning = False
 
 def get_args():
 
@@ -181,7 +182,7 @@ def get_args():
     os.makedirs(args.init_graph_save_path, exist_ok=True)
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
     args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))
-    args.title_embedding_path = os.path.join(args.save_dir, '{}_train_title_embedding.pt'.format(args.sentence_model))
+    args.title_embedding_path = os.path.join(args.save_dir, '{}_train_title_embedding.pt'.format(args.sentence_model)) if not args.param_tuning else os.path.join(args.save_dir, '{}_val_title_embedding.pt'.format(args.sentence_model))
 
 
     if args.example_path is None and args.example_id is None:
@@ -191,10 +192,11 @@ def get_args():
     args.name_equivalence_path = os.path.join(args.RESOURCE_DIR, 'class_name_equivalence.json')
     args.scene_path_format = os.path.join(args.SCENE_DIR, 'TrimmedTestScene{}_graph.json')
 
-    args.test_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'test_task_paths.txt')).strip().split('\n')
-    args.test_paths = sorted([os.path.join(args.DATASET_DIR, path) for path in args.test_paths])
-    args.train_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n')
-    args.train_paths = sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths])
+    args.test_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'test_task_paths.txt')).strip().split('\n') if not args.param_tuning else load_txt(os.path.join(args.RESOURCE_DIR, 'val_task_paths.txt')).strip().split('\n')
+    args.test_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.test_paths]))
+    args.train_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n') if not args.param_tuning else load_txt(os.path.join(args.RESOURCE_DIR, 'val_task_paths.txt')).strip().split('\n')
+    args.train_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths]))
+    
 
     if args.scene_num is not None:
         # retrieve examples from specified scene

@@ -539,7 +539,7 @@ class graph_dict_helper(object):
                 
         return objects_in_script, new_object_ids_in_script, first_room, room_mapping
 
-    def prepare_from_precondition(self, precond, objects_in_script, graph_dict):
+    def prepare_from_precondition(self, precond, objects_in_script, graph_dict, new_obj_ids=set([])):
 
         object_placing = self.object_placing
         objects_to_place = list(object_placing.keys())
@@ -553,6 +553,13 @@ class graph_dict_helper(object):
 
         for p in precond:
             for k, v in p.items():
+
+                obj_id = objects_in_script[(v[0].lower().replace(' ', '_'), int(v[1]))]
+
+                if obj_id not in new_obj_ids:
+                    continue
+
+
                 if k == 'location':
                     # handle when adding missing scripts
                     continue
