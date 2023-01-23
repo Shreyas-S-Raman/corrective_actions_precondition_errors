@@ -481,7 +481,7 @@ def online_api_request(example, task_prompt, api_params, sentence_model, action_
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in all_translated_actions):
+            if (translated_action in final_translated_actions) or (executed is False and translated_action == all_translated_actions[-1]):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -806,7 +806,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in all_translated_actions):
+            if (translated_action in final_translated_actions) or (executed is False and translated_action == all_translated_actions[-1]):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -890,7 +890,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     all_errors = []
 
     curr_step = 0; total_steps = 0
-    executed = True
+    executed = True; skip_step = False
 
 
     #track errors until escape step
@@ -904,6 +904,18 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
         
         # if prev. step not executed: remove error and bad step before adding new step
+
+        if skip_step:
+
+            if translated_condition:
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1]) + '\n'
+            
+            else:
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep {}:'.format(curr_step+1)
+            
+            executed = True
+            skip_step = False
+
         if not executed:
             
             if translated_condition:
@@ -1007,23 +1019,28 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         try:
             
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+
             
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
 
         
         #failure check 6: executability error
-        if not 'is executable' in message:
+        if (not 'is executable' in message):
             executed = False
+
+            skip_step = True if message_params['type']=='unflipped_boolean_state' else False
+
+            if not skip_step:
             
-            check_script_error = message
+                check_script_error = message
 
-            all_errors.append(check_script_error)
+                all_errors.append(check_script_error)
 
-            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
+                error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
 
-            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
-            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+                full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+                ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
 
             continue
 
