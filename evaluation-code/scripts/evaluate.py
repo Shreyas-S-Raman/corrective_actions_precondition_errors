@@ -360,54 +360,59 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
 
     for (task, desc), info in generation_info.items():
 
-        try:
-            program_lines = info['parsed_program_lines']
-        except KeyError as e:
-            program_lines = load_txt(info['parsed_save_path']).split('\n')
+        task_similarity = 0.0
+
+        for scene in range(len(info['executed'])):
+
+            try:
+                program_lines = info['parsed_program_lines']
+            except KeyError as e:
+                program_lines = load_txt(info['parsed_save_path']).split('\n')
+            
+            if executable_only and False in info['executed']:
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
+            
+
+            #if program is empty assign 0.0 n-step similarity
+            if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+                precision_sum = 0.0
         
-        if executable_only and False in info['executed']:
-            stop_idx = int(max(info['percent_executed'])*len(program_lines))
-            program_lines = program_lines[:stop_idx]
-        
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
 
-        #if program is empty assign 0.0 n-step similarity
-        if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
-            task_nstep_similarity_sum[(task, desc)] = 0.0
-    
-        else:
-            program_lines = preprocess_program_lines_for_lcs(program_lines)
-
-            gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
-            
-            mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
-            brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
-
-            precision_sum = 0.0
-
-            for i in range(1, n+1):
+                gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
                 
-                # shape: (num_windows , n)
-                n_step_windows = _get_sliding_windows(np.array(program_lines), i)
+                mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+                brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
+
+                precision_sum = 0.0
+
+                for i in range(1, n+1):
+                    
+                    # shape: (num_windows , n)
+                    n_step_windows = _get_sliding_windows(np.array(program_lines), i)
+                    
+                    # shape: (num_examples, num_windows, n)
+                    n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
+
+
+                    precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
                 
-                # shape: (num_examples, num_windows, n)
-                n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
 
-
-                precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
+                precision_sum = (precision_sum/n)*brevity_pen
             
 
-            precision_sum = (precision_sum/n)*brevity_pen
+            task_similarity += precision_sum
 
-            assert (task, desc) not in task_nstep_similarity_sum
+        assert (task, desc) not in task_nstep_similarity_sum 
+
+        task_nstep_similarity_sum[(task, desc)] = task_similarity/len(info['executed'])
             
-
-            task_nstep_similarity_sum[(task, desc)] = precision_sum
-            
-
         info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc)]
             
 
-    avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
+    avg_nstep_similarty_sum = np.sum(list(task_nstep_similarity_sum.values()))/len(task_nstep_similarity_sum.keys())
     
 
     return avg_nstep_similarty_sum
@@ -477,47 +482,53 @@ def evaluate_pairwise_precision(generation_info, executable_only=False):
 
     for (task, desc), info in generation_info.items():
 
-        try:
-            program_lines = info['parsed_program_lines']
-        except KeyError as e:
-            program_lines = load_txt(info['parsed_save_path']).split('\n')
-        
-        if executable_only and False in info['executed']:
-            stop_idx = int(max(info['percent_executed'])*len(program_lines))
-            program_lines = program_lines[:stop_idx]
-        
+        task_precision = 0.0
 
-        #if program is empty assign 0.0 n-step similarity
-        if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
-            task_pairwise_precision[(task, desc)] = 0.0
-    
-        else:
-            program_lines = preprocess_program_lines_for_lcs(program_lines)
+        for scene in range(len(info['executed'])):
 
-            gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
-
-
-            mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
-            brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
-
-
-            program_lines = _generate_line_pair_counts(program_lines, gt=False)
-            gt_program_lines = _generate_line_pair_counts(gt_program_lines, gt = True)
-
-
-            precision_sum = _compute_precision(program_lines, gt_program_lines)
-            precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
-
-            assert (task, desc) not in task_pairwise_precision
+            try:
+                program_lines = info['parsed_program_lines']
+            except KeyError as e:
+                program_lines = load_txt(info['parsed_save_path']).split('\n')
+            
+            if executable_only and False in info['executed']:
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
             
 
-            task_pairwise_precision[(task, desc)] = precision_sum
+            #if program is empty assign 0.0 n-step similarity
+            if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+                precision_sum = 0.0
+        
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+                gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+
+
+                mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+                brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
+
+
+                program_lines = _generate_line_pair_counts(program_lines, gt=False)
+                gt_program_lines = _generate_line_pair_counts(gt_program_lines, gt = True)
+
+
+                precision_sum = _compute_precision(program_lines, gt_program_lines)
+                precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
+
+            task_precision += precision_sum
+
+        assert (task, desc) not in task_pairwise_precision
+            
+
+        task_pairwise_precision[(task, desc)] = precision_sum/len(info['executed'])
             
 
         info['pairwise_precision'] = task_pairwise_precision[(task, desc)]
             
 
-    avg_pairwise_precision = np.mean(list(task_pairwise_precision.values()))
+    avg_pairwise_precision = np.sum(list(task_pairwise_precision.values()))/len(task_pairwise_precision.keys())
     
 
     return avg_pairwise_precision
