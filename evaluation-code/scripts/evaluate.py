@@ -530,77 +530,88 @@ def evaluate_lcs_score(generation_info, verbose=False, executable_only=False):
     task_lcs = dict()
     task_sketch_lcs = dict()
     for (task, desc), info in generation_info.items():
+
         try:
             program_lines = info['parsed_program_lines']
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
         
+        avg_task_lcs = 0.0
+        avg_task_sketch_lcs = 0.0
 
-        #if executable_only and the script is not executable, then get the portion of program_lines that are executable
-        if executable_only and False in info['executed']:
-            
-            stop_idx = int(max(info['percent_executed'])*len(program_lines))
-            program_lines = program_lines[:stop_idx]
-            
+        for scene in range(len(info['executed'])):
+            #if executable_only and the script is not executable, then get the portion of program_lines that are executable
+            if executable_only and False in info['executed']:
+                
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
+                
 
 
-        # init default values
-        most_similar_gt_program_text = info['gt_program_text'][0]
-        most_similar_gt_sketch_text = ''
-        task_sketch_lcs[(task, desc)] = -1
-        # if the program is empty, simply assign lcs of 0
-        if len(program_lines) == 0 or (len(program_lines) == 1 and len(program_lines[0]) == 0):
-            task_lcs[(task, desc)] = 0
-            if verbose:
-                print('*' * 10 + f' {task} ' + '*' * 10)
-                print('*' * 5 + f' program length is 0 ' + '*' * 5)
-                print('*' * 40)
-                print()
-        else:
-            program_lines = preprocess_program_lines_for_lcs(program_lines)
-            # iterate through all gt programs and use the highest lcs obtained
-            curr_lcs = []
-            
+            # init default values
+            most_similar_gt_program_text = info['gt_program_text'][0]
+            most_similar_gt_sketch_text = ''
+            task_sketch_lcs[(task, desc)] = -1
+            # if the program is empty, simply assign lcs of 0
+            if len(program_lines) == 0 or (len(program_lines) == 1 and len(program_lines[0]) == 0):
+                
+                if verbose:
+                    print('*' * 10 + f' {task} ' + '*' * 10)
+                    print('*' * 5 + f' program length is 0 ' + '*' * 5)
+                    print('*' * 40)
+                    print()
+                continue
 
-            for gt_program_lines in info['gt_program_lines']:
-                gt_program_lines = preprocess_program_lines_for_lcs(gt_program_lines)
-                lcs = LCS(program_lines, gt_program_lines)
-                lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_program_lines))))
-                curr_lcs.append(lcs_score)
-
-            assert (task, desc) not in task_lcs
-            most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-            
-            task_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
-            most_similar_gt_program_text = info['gt_program_text'][most_similar_gt_idx]
-            if verbose:
-                print('*' * 10 + f' {task} ' + '*' * 10)
-                print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
-                print('\n* '.join(program_lines))
-                print('-' * 40)
-                print('\n* '.join(info['gt_program_lines'][np.argsort(curr_lcs)[-1]]))
-                print('*' * 40)
-                print()
-            # iterate through all gt sketches and use the highest lcs obtained
-            if 'gt_sketch_lines' in info:
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
+                # iterate through all gt programs and use the highest lcs obtained
                 curr_lcs = []
-                for gt_sketch_lines in info['gt_sketch_lines']:
-                    gt_sketch_lines = preprocess_program_lines_for_lcs(gt_sketch_lines)
-                    lcs = LCS(program_lines, gt_sketch_lines)
-                    lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_sketch_lines))))
+                
+
+                for gt_program_lines in info['gt_program_lines']:
+                    gt_program_lines = preprocess_program_lines_for_lcs(gt_program_lines)
+                    lcs = LCS(program_lines, gt_program_lines)
+                    lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_program_lines))))
                     curr_lcs.append(lcs_score)
+
+                assert (task, desc) not in task_lcs
                 most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-                task_sketch_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
-                most_similar_gt_sketch_text = info['gt_sketch_text'][most_similar_gt_idx]
+                
+                avg_task_lcs += curr_lcs[most_similar_gt_idx]
+                most_similar_gt_program_text = info['gt_program_text'][most_similar_gt_idx]
                 if verbose:
                     print('*' * 10 + f' {task} ' + '*' * 10)
                     print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
                     print('\n* '.join(program_lines))
                     print('-' * 40)
-                    print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
+                    print('\n* '.join(info['gt_program_lines'][np.argsort(curr_lcs)[-1]]))
                     print('*' * 40)
                     print()
+                # iterate through all gt sketches and use the highest lcs obtained
+                if 'gt_sketch_lines' in info:
+                    curr_lcs = []
+                    for gt_sketch_lines in info['gt_sketch_lines']:
+                        gt_sketch_lines = preprocess_program_lines_for_lcs(gt_sketch_lines)
+                        lcs = LCS(program_lines, gt_sketch_lines)
+                        lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_sketch_lines))))
+                        curr_lcs.append(lcs_score)
+                    most_similar_gt_idx = np.argsort(curr_lcs)[-1]
+                    avg_task_sketch_lcs += curr_lcs[most_similar_gt_idx]
+                    most_similar_gt_sketch_text = info['gt_sketch_text'][most_similar_gt_idx]
+                    if verbose:
+                        print('*' * 10 + f' {task} ' + '*' * 10)
+                        print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
+                        print('\n* '.join(program_lines))
+                        print('-' * 40)
+                        print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
+                        print('*' * 40)
+                        print()
         
+
+        task_lcs[(task, desc)] = avg_task_lcs/len(info['executed'])
+        task_sketch_lcs[(task, desc)] = avg_task_sketch_lcs/len(info['executed'])
+        
+
         if not executable_only:
             info['lcs'] = task_lcs[(task, desc)]
             info['sketch_lcs'] = task_sketch_lcs[(task, desc)]
@@ -610,7 +621,7 @@ def evaluate_lcs_score(generation_info, verbose=False, executable_only=False):
 
         info['most_similar_gt_program_text'] = most_similar_gt_program_text
         info['most_similar_gt_sketch_text'] = most_similar_gt_sketch_text
-    avg_lcs = np.mean(list(task_lcs.values()))
+    avg_lcs =  np.sum(list(task_lcs.values()))/len(task_lcs.values())
     sketch_lcs_sum, count = 0, 0
     for v in task_sketch_lcs.values():
         if v != -1:
