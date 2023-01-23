@@ -18,7 +18,10 @@ class ExecutionInfo(object):
         self.current_line = None
 
     def error(self, msg: str, err_type:str, error_params):
-        self.messages.append(msg.format(*tuple(error_params.values())[:-1]) + ' when executing "' + self.current_line_info() + '"')
+
+        params = tuple(error_params.values())[:-1] if 'error_state' not in error_params else tuple(error_params.values())[:-2]
+
+        self.messages.append(msg.format(*params) + ' when executing "' + self.current_line_info() + '"')
         
         
         for k in error_params:
@@ -345,6 +348,7 @@ class OpenExecutor(ActionExecutor):
         self.close = close
 
     def execute(self, script: Script, state: EnvironmentState, info: ExecutionInfo):
+        
         current_line = script[0]
         info.set_current_line(current_line)
         node = state.get_state_node(current_line.object())
@@ -373,7 +377,7 @@ class OpenExecutor(ActionExecutor):
             return False
 
         s = State.OPEN if self.close else State.CLOSED
-        s_err = State.CLOSE if self.close else State.OPEN
+        s_err = State.CLOSED if self.close else State.OPEN
 
         if s not in node.states:
             info.error('{} is not {}', 'unflipped_boolean_state', {'obj': node, 'state' : s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
@@ -636,7 +640,7 @@ class PutOffExecutor(ActionExecutor):
     def check_putoff(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if not state.evaluate(ExistsRelation(NodeInstance(node), Relation.ON, NodeInstanceFilter(char_node))):
-            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'not on' + char_node, 'error_state': 'already on' + char_node, 'subtype':None})
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'not on' + char_node.class_name, 'error_state':  'off me', 'subtype':None})
             return False
         if Property.CLOTHES not in node.properties:
             info.error('{} is not clothes', 'invalid_action', {'obj': node, 'subtype': 'not clothes'})

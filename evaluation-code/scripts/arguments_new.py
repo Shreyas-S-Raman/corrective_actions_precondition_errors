@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1000
+    expID = 174
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -92,7 +92,7 @@ class Arguments:
         'not_find': CausalErrors.NOT_FIND1,
         'invalid_action':CausalErrors.INVALID_ACTION1,
         'max_occupancy':CausalErrors.MAX_OCCUPANCY1,
-        'not_holding':CausalErrors.NOT_HOLDING3 if third_person else CausalErrors.NOT_HOLDING2,
+        'not_holding':CausalErrors.NOT_HOLDING1 if third_person else CausalErrors.NOT_HOLDING3,
         'not_holding_any':CausalErrors.NOT_HOLDING_ANY1,
         'not_facing':CausalErrors.NOT_FACING2,
         'missing_step':CausalErrors.MISSING_STEP1,

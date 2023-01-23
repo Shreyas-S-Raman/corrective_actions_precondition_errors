@@ -219,7 +219,12 @@ def check_one_program(helper, script, precond, graph_dict, w_graph_list, modify_
     graph = EnvironmentGraph(graph_dict)
     name_equivalence = utils.load_name_equivalence()
     executor = ScriptExecutor(graph, name_equivalence)
-    executable, final_state, graph_state_list, final_step_no = executor.execute(script, w_graph_list=w_graph_list)
+
+    try:
+        executable, final_state, graph_state_list, final_step_no = executor.execute(script, w_graph_list=w_graph_list)
+    except Exception as e:
+        print('ERROR: ', e)
+        
 
     if executable:
         message = 'Script is executable'

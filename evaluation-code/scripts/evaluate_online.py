@@ -330,7 +330,6 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
         
-        
         scene_path = args.scene_path_format.format(scene)
 
         if args.use_similar_example:
@@ -656,7 +655,7 @@ def construct_generation_dict(args, evaluated_scenes):
     
     #test = []
     #target = ['Pick up', 'Eat', 'Hang up car keys', 'Drink', 'Put on coat', 'Wash sink', 'Answer door', 'Check email', 'Wash dishes with dishwasher', 'Clean  mirror', 'Walk through', 'Prepare Dinner', 'Shop', 'Clean sink', 'Turn on light', 'Write report', 'Wash dishes by hand', 'Text friends while sitting on couch', 'Movie', 'Get out dish', 'Straighten paintings on wall', 'Take off coat', 'Bring me red cookbook', 'Admire art', 'Computer work', 'Juggling', 'Let baby learn how to walk', 'Greet guests', 'Put on glasses', 'Rearrange photo frames', 'Plug in nightlight', 'Wash dishes', 'Add paper to printer', 'Sit', 'Play on laptop', 'Put in chair', 'Set up buffet area', 'Close door', 'Look out window', 'Put away clean clothes', 'Cutting', 'Do laundry', 'Gaze out window', 'Get ready for school', 'Answer emails', 'Get ready to leave', 'Read news', 'Write  school paper', 'Wake kids up', 'Lock door', 'Have snack', 'Get drink', 'Turking', 'Shredding', 'Send  email', 'Surf net', 'Watch  TV', 'Rain welcome', 'Change light', 'Write story', 'Turn night light on', 'Pull up carpet', 'Get ready for day', 'Pick up cat hair', 'Wash hands', 'Sweep hallway please', 'Put groceries in Fridge', 'Homework', 'Put toys away', 'Unload dishwasher', 'Oil dining room', 'Turn on TV', 'Open door', 'Shampoo hair', 'Hang with friends', 'Put umbrella away', 'Clean bathroom', 'Put away jackets', 'Open bathroom window', 'Read book', 'Spread table with appropriate supplies', 'Print out papers', 'Shave', 'Sent email', 'Throw away newspaper', 'Added meat to freezer', 'Clean', 'Set mail on table', 'Sit in chair', 'Say goodbye to guests leaving', 'Take dishes out of dishwasher', 'Shred receipts', 'Print out document', 'vacuum carpet', 'Bring dirty plate to sink', 'Shut front door', 'Cut bread', 'Load dishwasher', 'Re arrange office', 'Watch TV']
-    
+    #pdb.set_trace()
     
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
