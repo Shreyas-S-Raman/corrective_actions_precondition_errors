@@ -539,7 +539,7 @@ class graph_dict_helper(object):
                 
         return objects_in_script, new_object_ids_in_script, first_room, room_mapping
 
-    def prepare_from_precondition(self, precond, objects_in_script, graph_dict, new_obj_ids=set([])):
+    def prepare_from_precondition(self, precond, objects_in_script, graph_dict, new_obj_ids=set([]), closed_loop=False):
 
         object_placing = self.object_placing
         objects_to_place = list(object_placing.keys())
@@ -554,7 +554,7 @@ class graph_dict_helper(object):
         for p in precond:
             for k, v in p.items():
 
-                if k in relation_script_precond_simulator:
+                if closed_loop and (k in relation_script_precond_simulator):
                     src_name, src_id = v[0]
                     tgt_name, tgt_id = v[1]
                     src_id = int(src_id)
@@ -566,7 +566,7 @@ class graph_dict_helper(object):
                     if not src_id in new_obj_ids and not tgt_id in new_obj_ids:
                         continue
 
-                if k in states_script_precond_simulator:
+                if closed_loop and (k in states_script_precond_simulator):
 
                     obj_id = objects_in_script[(v[0].lower().replace(' ', '_'), int(v[1]))]
 
