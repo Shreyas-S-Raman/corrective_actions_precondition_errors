@@ -554,25 +554,6 @@ class graph_dict_helper(object):
         for p in precond:
             for k, v in p.items():
 
-                if closed_loop and (k in relation_script_precond_simulator):
-                    src_name, src_id = v[0]
-                    tgt_name, tgt_id = v[1]
-                    src_id = int(src_id)
-                    tgt_id = int(tgt_id)
-
-                    src_id = objects_in_script[(src_name.lower().replace(' ', '_'), src_id)]
-                    tgt_id = objects_in_script[(tgt_name.lower().replace(' ', '_'), tgt_id)]
-
-                    if not src_id in new_obj_ids and not tgt_id in new_obj_ids:
-                        continue
-
-                if closed_loop and (k in states_script_precond_simulator):
-
-                    obj_id = objects_in_script[(v[0].lower().replace(' ', '_'), int(v[1]))]
-
-                    if obj_id not in new_obj_ids:
-                        continue
-
 
                 if k == 'location':
                     # handle when adding missing scripts

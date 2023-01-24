@@ -15,6 +15,7 @@ import parse
 import torch
 import time
 from scene_gym import SceneGym
+from scene_gym_copy import SceneGymAllSteps
 from prompt_generator import PromptGenerator
 import pdb
 import string
@@ -1057,6 +1058,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 
+
 def resampling_api_request(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
 
     def _get_score(matching_score, log_prob):
@@ -1313,6 +1315,654 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         #take a single step/action in the VH scene
         try:
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
+
+        except Exception as e:
+            message = "{}: {}".format(e.__class__.__name__, e)
+
+        #failure check 6: executability error
+        if not 'is executable' in message:
+            executed = False
+            check_script_error = message
+
+            all_errors.append(check_script_error)
+            continue
+
+
+        #if all failure checks pass: then increment step
+        curr_step += 1
+        #add best step to plan + continue
+        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+        final_translated_actions.append(translated_action)
+
+    
+    
+    
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join(program_lines).strip(), 'executed': False if total_steps==0 else executed, 'percent_executed': 1.0 if (executed and total_steps>0) else  0.0, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps, 'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
+        'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step, 'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+
+
+    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
+
+
+
+def online_api_request_one_error_full(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
+    
+    
+
+    def _get_score_sum(matching_score, log_prob, mask):
+        return (matching_score + beta * log_prob)*mask
+    
+    def _get_score_product(matching_score, log_prob, mask):
+        return (((matching_score + 1.0)/2.0)*np.exp(log_prob))*mask
+
+    def _format_api_output(output):
+        # exclude examples
+        if '\n\n' in output:
+            output = output[output.index('\n\n') + 2:]
+        return output.strip()
+    
+
+    def _generate_reasons(full_text, default_params):
+        
+        pass
+
+    def _generate_action(full_text, default_params, executed):
+        '''tracks all options for generated text + translated actions for the current step'''
+        
+        curr_generated = []
+        curr_matching = []
+        curr_logprobs = []
+        curr_translated = []
+        curr_overall = []
+
+        # query api ===================================
+        #add full text (prompt and query task) as 'prompt' for LLM prediction
+        default_params['prompt'] = full_text
+        if isinstance(engine, str):
+            response = api_retry_if_failed(default_params, max_iters=max_iters, engine=engine)
+        else:
+            response = engine(default_params)
+
+        '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
+
+            iterates all responses + chooses best for next step?
+        '''
+        for i in range(default_params['n']):
+            generated_text = response['choices'][i]['text']
+            logprob = np.mean(response['choices'][i]['logprobs']['token_logprobs'])
+
+            # calculate score for current step
+            '''removes white space from generated text and convert to lower case
+               assumes that after curr_step 0 ==> model will auto generate 'Step 2:', 'Step 3:' prefixes to generated_text
+            '''
+            if curr_step == 0:
+                processed = generated_text.strip().lower()
+            else:
+                try:
+                    processed = generated_text[generated_text.index(':') + 1:].strip().lower() if executed else generated_text.strip().lower()
+                except ValueError as e:
+                    curr_generated.append('PARSING ERROR')
+                    curr_matching.append(-200)
+                    curr_logprobs.append(-200)
+                    curr_translated.append('PARSING ERROR')
+                    curr_overall.append(-200)
+                    continue
+            
+            #remove string punctuation from processed output text of LLM
+            processed = processed.translate(str.maketrans('', '', string.punctuation))
+
+            most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
+            most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
+
+            '''indexes action list with most similar index for action'''
+            translated_action = action_list[most_similar_idx]
+
+
+            '''checks if the action can be executed: masking'''
+            executable_mask = 1.0
+
+            if add_executable_mask:
+                program_line, ___ = str2program_list([translated_action])
+                parsed_program_line = arg2abstract(program_line)
+
+                try:
+                    preconditions = get_preconds_script([parsed_program_line[-1]], verbose=verbose).printCondsJSON()
+                except ScriptFail as e:
+                    
+                    executable_mask = float('-inf')
+                try:
+                    message, __, __, __, __, __ = scene_environment.step([parsed_program_line[-1]], preconditions)
+                    scene_environment.backtrack_step()
+
+                    if not 'is executable' in message:
+                        
+                        executable_mask = float('-inf')
+
+                except Exception as e:
+                    
+                    executable_mask = float('-inf')
+
+            #modify_objects_unity2script(helper, script, precond)
+            executable_mask = 1.0
+            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
+            '''matching_score + beta * log_prob'''
+
+            if verbose:
+                print(f'** {generated_text} ({translated_action}; matching_score={matching_score:.2f}; mean_logprob={logprob:.2f}); overall={overall_score:.2f}')
+
+            # record metrics for each output
+            '''generated_text contains raw LLM output
+               translated_action contains matched/converted action from action_list (list of defined actions in VH)
+               curr_overal: tracks overall score/performance of plan
+            '''
+            curr_matching.append(matching_score)
+            curr_translated.append(translated_action)
+            curr_logprobs.append(logprob)
+            curr_generated.append(generated_text)
+            # penalize seen actions
+            if (translated_action in final_translated_actions) or (len(all_translated_actions) > 0 and translated_action == all_translated_actions[-1]):
+                if verbose:
+                    print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
+                curr_overall.append(-100)
+            else:
+                curr_overall.append(overall_score)
+
+        # stop when model thinks it's finished or format is wrong (very unlikely in practice)
+        num_to_look_at = int(percent_terminate * default_params['n'])
+        '''sort the log probabilities of choices in increasing order + pick most 'k' likely as final choice for next step'''
+        highest_ids = np.argsort(curr_logprobs)[-num_to_look_at:]
+
+        nogen_terminate = True; score_terminate = False; error_message = None
+
+        for idx in highest_ids:
+            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step' or not executed):
+                nogen_terminate = False
+
+        if nogen_terminate:
+            if verbose:
+                print(f'** model thinks it should terminate {generated_text}')
+
+            error_message = f'No plan generated: model thinks it should terminate'
+
+            return None, None, None, nogen_terminate, score_terminate, error_message
+
+        # calculate most likely step ===================================
+        '''compare best score with cutoff threshold: cutoff threshold not implemented by default
+           best_idx: proposed action/step with best overall score
+        '''
+        
+        highest_score = np.max(curr_overall)
+        best_idx = np.argsort(curr_overall)[-1]
+        if cutoff_threshold != -100 and highest_score < cutoff_threshold:
+            score_terminate = True
+            if verbose:
+                print(f'## STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})')
+
+            error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
+
+            return None, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+
+        # select the previously generated output whose score is the highest
+        '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
+
+        if translated_condition:
+            best_curr = curr_translated[best_idx]
+            best_curr = best_curr[0].upper() + best_curr[1:]
+            best_curr = best_curr.replace('_', ' ')
+            if curr_step == 0:
+                best_curr = f' {best_curr}'
+            else:
+                best_curr = f'Step {curr_step + 1}: {best_curr}'
+        else:
+            best_curr = curr_generated[best_idx]
+        if verbose:
+            print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
+
+        return best_curr, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+
+
+
+    scene_environment = SceneGymAllSteps(scene_path, scene_num, task_prompt)
+    prompt_generator = PromptGenerator(prompt_args)
+
+    default_params = copy.deepcopy(api_params)
+    reasons_params = copy.deepcopy(api_params)
+
+    # stop when seeing a new line since we are generating one action per iter
+    default_params['stop'] = '\n'
+    
+
+    full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
+
+    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    final_text = example + task_prompt
+
+    all_translated_actions = []
+    all_generated_actions = []
+    final_translated_actions = []
+
+    all_errors = []
+
+    curr_step = 0; total_steps = 0
+    executed = True; skip_step = False
+
+
+    #track errors until escape step
+    #pdb.set_trace()
+    
+    while curr_step < max_steps and total_steps < max_steps*2:
+        #pdb.set_trace()
+        no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
+
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
+
+
+        # if prev. step not executed: remove error and bad step before adding new step
+        
+        if not executed:
+            
+            if translated_condition:
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+            
+            else:
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
+            
+            executed = True
+
+
+        #failure check 1: no_gen_terminate
+        if nogen_terminate:
+            
+            no_gen_error = error_message
+            break
+
+        #failure check 2: score terminate
+        if score_terminate:
+            
+            score_error = error_message
+            break
+
+
+        #add best step to plan + continue
+        
+        full_text += f'\nStep 1:{best_curr}\n' if curr_step==0 else f'{best_curr}\n'
+        ongoing_text += f'{best_curr}\n'
+
+        all_translated_actions.append(translated_action)
+        all_generated_actions.append(generated_action)
+        total_steps +=1
+
+
+        #check for execution/precondition errors
+        formatted_text = _format_api_output(ongoing_text.strip())
+
+        if raw_lm:
+            program_lines, parse_info = str2program_list(ongoing_text.split('\n')[1:])
+            program_text = '\n'.join(program_lines).strip()
+
+        else:
+            matched_program_text = '\n'.join(all_translated_actions).strip()
+            program_lines, parse_info = str2program_list(all_translated_actions)
+            program_lines = remove_same_consecutive(program_lines)
+            program_text = '\n'.join(program_lines).strip()
+
+        parsed_program_lines = arg2abstract(program_lines)
+        
+        #failure check 3: parsing error
+        if parse_info['parsibility']==0:
+            executed = False
+            
+            parsing_error = parse_info['parsing_error']
+
+            all_errors.append(parsing_error)
+
+            error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
+            
+            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += error_prompt if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            continue
+
+        
+
+        
+        #failure check 4: empty program error
+        if len(parsed_program_lines) == 0:
+            executed = False
+            
+            empty_program_error = 'Script Fail: empty program'
+
+            all_errors.append(empty_program_error)
+            error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
+
+            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+
+            continue
+
+
+    
+        #failure check 5: precondition error on the last action taken
+        try:
+            preconditions = get_preconds_script(parsed_program_lines, verbose=verbose).printCondsJSON()
+        except ScriptFail as e:
+            executed = False
+            
+            precond_error = 'ScriptFail: {}'.format(e.message)
+
+            all_errors.append(precond_error)
+
+            error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
+
+            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            continue
+
+        
+        #take a single step/action in the VH scene
+        try:
+            
+            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step(parsed_program_lines, preconditions)
+            
+            
+        except Exception as e:
+            message = "{}: {}".format(e.__class__.__name__, e)
+
+        
+        #failure check 6: executability error
+        if (not 'is executable' in message):
+            executed = False
+
+            
+            check_script_error = message
+
+            all_errors.append(check_script_error)
+
+            error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
+
+            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            
+
+            continue
+
+
+        #if all failure checks pass: then increment step
+        curr_step += 1
+        #add best step to plan + continue
+        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+        final_translated_actions.append(translated_action)
+
+
+    
+    
+    info = { 'parsed_program': None if total_steps==0 else '\n'.join            (program_lines).strip(), 
+        'executed': False if total_steps==0 else executed, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps,
+        'percent_executed': 1.0 if (executed and total_steps>0) else 0.0 ,'scene_path': scene_path,
+        'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
+        'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
+        'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step,  'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
+
+    return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
+
+
+def resampling_api_request_full(example, task_prompt, api_params, sentence_model, action_list_embedding, device, action_list, raw_lm, scene_path, scene_num, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False ):
+
+    def _get_score(matching_score, log_prob):
+        return matching_score + beta * log_prob
+
+    def _format_api_output(output):
+        # exclude examples
+        if '\n\n' in output:
+            output = output[output.index('\n\n') + 2:]
+        return output.strip()
+
+    def _generate_action(full_text, default_params):
+        '''tracks all options for generated text + translated actions for the current step'''
+        curr_generated = []
+        curr_matching = []
+        curr_logprobs = []
+        curr_translated = []
+        curr_overall = []
+
+        # query api ===================================
+        #add full text (prompt and query task) as 'prompt' for LLM prediction
+        default_params['prompt'] = full_text
+        if isinstance(engine, str):
+            response = api_retry_if_failed(default_params, max_iters=max_iters, engine=engine)
+        else:
+            response = engine(default_params)
+
+        '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
+
+            iterates all responses + chooses best for next step?
+        '''
+        for i in range(default_params['n']):
+            generated_text = response['choices'][i]['text']
+            logprob = np.mean(response['choices'][i]['logprobs']['token_logprobs'])
+
+            # calculate score for current step
+            '''removes white space from generated text and convert to lower case
+               assumes that after curr_step 0 ==> model will auto generate 'Step 2:', 'Step 3:' prefixes to generated_text
+            '''
+            if curr_step == 0:
+                processed = generated_text.strip().lower()
+            else:
+                try:
+                    processed = generated_text[generated_text.index(':') + 1:].strip().lower()
+                except ValueError as e:
+                    curr_generated.append('PARSING ERROR')
+                    curr_matching.append(-200)
+                    curr_logprobs.append(-200)
+                    curr_translated.append('PARSING ERROR')
+                    curr_overall.append(-200)
+                    continue
+            most_similar_idx, matching_score = top_k_similar(sentence_model, processed, action_list_embedding, device, top_k=1)
+            most_similar_idx, matching_score = most_similar_idx[0], matching_score[0]
+            overall_score = _get_score(matching_score, logprob)
+            '''matching_score + beta * log_prob'''
+
+            '''indexes action list with most similar index for action'''
+            translated_action = action_list[most_similar_idx]
+
+            if verbose:
+                print(f'** {generated_text} ({translated_action}; matching_score={matching_score:.2f}; mean_logprob={logprob:.2f}); overall={overall_score:.2f}')
+
+            # record metrics for each output
+            '''generated_text contains raw LLM output
+               translated_action contains matched/converted action from action_list (list of defined actions in VH)
+               curr_overal: tracks overall score/performance of plan
+            '''
+            curr_matching.append(matching_score)
+            curr_translated.append(translated_action)
+            curr_logprobs.append(logprob)
+            curr_generated.append(generated_text)
+            # penalize seen actions
+            if (translated_action in final_translated_actions) or (len(all_translated_actions) > 0 and translated_action == all_translated_actions[-1]):
+                if verbose:
+                    print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
+                curr_overall.append(-100)
+            else:
+                curr_overall.append(overall_score)
+
+        # stop when model thinks it's finished or format is wrong (very unlikely in practice)
+        '''sort the log probabilities of choices in increasing order + pick most 'k' likely as final choice for next step'''
+        highest_ids = np.argsort(curr_logprobs)
+
+        nogen_terminate = True; score_terminate = False; error_message = None
+
+        for idx in highest_ids:
+            if len(curr_generated[idx]) > 0 and (curr_step == 0 or curr_generated[idx][:4] == 'Step'):
+                nogen_terminate = False
+
+        if nogen_terminate:
+            if verbose:
+                print(f'** model thinks it should terminate {generated_text}')
+
+            error_message = f'No plan generated: model thinks it should terminate'
+
+            return None, None, None, nogen_terminate, score_terminate, error_message
+
+        # calculate most likely step ===================================
+        '''compare best score with cutoff threshold: cutoff threshold not implemented by default
+           best_idx: proposed action/step with best overall score
+        '''
+        highest_score = np.max(curr_overall)
+        sorted_overall = np.argsort(curr_overall)
+        best_idx = sorted_overall[-1]
+
+        if cutoff_threshold != -100 and highest_score < cutoff_threshold:
+            score_terminate = True
+            if verbose:
+                print(f'## STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})')
+
+            error_message = f'STOP GENERATION because best score after {default_params["n"]} attempts was {curr_generated[best_idx]} ({highest_score} < {cutoff_threshold})'
+
+            return None, curr_generated[best_idx], curr_translated[best_idx], nogen_terminate, score_terminate, error_message
+
+        # select the previously generated output whose score is the highest
+        '''uses args.translated_condition option: takes best from translated actions (rather than generated text) '''
+        def _get_curr(curr_translated, curr_generated, translated_condition, idx):
+            if translated_condition:
+                curr = curr_translated[idx]
+                curr = curr[0].upper() + curr[1:]
+                curr = curr.replace('_', ' ')
+                if curr_step == 0:
+                    curr = f' {curr}'
+                else:
+                    curr = f'Step {curr_step + 1}: {curr}'
+            else:
+                curr = curr_generated[idx]
+
+            return curr
+
+        best_curr = _get_curr(curr_translated, curr_generated, translated_condition, best_idx)
+
+        #store list of alternative current steps + translated steps
+        alternative_curr = [_get_curr(curr_translated, curr_generated, translated_condition, i) for i in reversed(sorted_overall)]
+        alternative_translated = [curr_translated[i] for i in reversed(sorted_overall)]
+        alternative_generated = [curr_generated[i] for i in reversed(sorted_overall)]
+
+        if verbose:
+            print(f'## selecting best-score output "{best_curr}" (score: {highest_score}; raw: {curr_generated[best_idx]}; translated: {curr_translated[best_idx]})\n')
+
+        return alternative_curr, alternative_generated, alternative_translated, nogen_terminate, score_terminate, error_message
+
+
+
+    scene_environment = SceneGymAllSteps(scene_path, scene_num, task_prompt)
+
+    default_params = copy.deepcopy(api_params)
+    # stop when seeing a new line since we are generating one action per iter
+    default_params['stop'] = '\n'
+
+    full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
+    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+
+    final_text = example + task_prompt
+
+    all_translated_actions = []
+    all_generated_actions = []
+    final_translated_actions = []
+
+    all_errors = []
+
+    curr_step = 0; total_steps = 0; curr_idx = 0
+    num_executed = 0
+    executed = True
+    
+    #pdb.set_trace()
+    #track errors until escape step
+
+    while curr_step < max_steps and total_steps < max_steps*2:
+        
+        no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
+
+
+        # accumulate output and continue
+        if not executed:
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+
+        if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
+            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            curr_idx = 0
+
+        #failure check 1: no_gen_terminate
+        if nogen_terminate:
+            executed = True if total_steps > 0 else False
+            no_gen_error = error_message
+            break
+
+        #failure check 2: score terminate
+        if score_terminate:
+            executed = True if total_steps > 0 else False
+            score_error = error_message
+            break
+
+        best_curr = alternative_curr[curr_idx]
+        translated_action = alternative_translate[curr_idx]
+        generated_action = alternative_generated[curr_idx]
+        executed = True
+
+        #add best step to plan + continue
+        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
+        ongoing_text += f'{best_curr}\n'
+
+        all_translated_actions.append(translated_action)
+        all_generated_actions.append(generated_action)
+        total_steps +=1
+        curr_idx += 1
+
+
+        #check for execution/precondition errors
+        formatted_text = _format_api_output(full_text.strip())
+
+        if raw_lm:
+            program_lines, parse_info = str2program_list(full_text.split('\n')[1:])
+            program_text = '\n'.join(program_lines).strip()
+
+        else:
+            matched_program_text = '\n'.join(all_translated_actions).strip()
+            program_lines, parse_info = str2program_list(all_translated_actions)
+            program_lines = remove_same_consecutive(program_lines)
+            program_text = '\n'.join(program_lines).strip()
+
+        #failure check 3: parsing error
+        if parse_info['parsibility']==0:
+            executed = False
+            parsing_error = parse_info['parsing_error']
+
+            all_errors.append(parsing_error)
+            continue
+
+        parsed_program_lines = arg2abstract(program_lines)
+
+        #failure check 4: empty program error
+        if len(parsed_program_lines) == 0:
+            executed = False
+            empty_program_error = 'Script Fail: empty program'
+
+            all_errors.append(empty_program_error)
+            continue
+
+
+
+        #failure check 5: precondition error on the last action taken
+        try:
+
+            preconditions = get_preconds_script(parsed_program_lines, verbose=verbose).printCondsJSON()
+        except ScriptFail as e:
+            executed = False
+            precond_error = 'ScriptFail: {}'.format(e.message)
+
+            all_errors.append(precond_error)
+            continue
+
+
+        #take a single step/action in the VH scene
+        try:
+            message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step(parsed_program_lines, preconditions)
 
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
