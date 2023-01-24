@@ -790,7 +790,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
             #modify_objects_unity2script(helper, script, precond)
             executable_mask = 1.0
-            overall_score = _get_score_product(matching_score, logprob, executable_mask)
+            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             if verbose:
@@ -806,7 +806,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
             # penalize seen actions
-            if (translated_action in final_translated_actions) or (executed is False and translated_action == all_translated_actions[-1]):
+            if (translated_action in final_translated_actions) or (len(all_translated_actions) > 0 and translated_action == all_translated_actions[-1]):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
                 curr_overall.append(-100)
@@ -894,28 +894,21 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
     #track errors until escape step
-    # pdb.set_trace()
-
+    #pdb.set_trace()
+    
     while curr_step < max_steps and total_steps < max_steps*2:
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
 
-        
-        # if prev. step not executed: remove error and bad step before adding new step
-
         if skip_step:
-
-            if translated_condition:
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1]) + '\n'
-            
-            else:
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep {}:'.format(curr_step+1)
             
             executed = True
             skip_step = False
 
+        # if prev. step not executed: remove error and bad step before adding new step
+        
         if not executed:
             
             if translated_condition:
@@ -1019,7 +1012,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         try:
             
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
-
+            pdb.set_trace()
             
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
@@ -1028,11 +1021,9 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #failure check 6: executability error
         if (not 'is executable' in message):
             executed = False
-
             skip_step = True if message_params['type']=='unflipped_boolean_state' else False
 
             if not skip_step:
-            
                 check_script_error = message
 
                 all_errors.append(check_script_error)
@@ -1041,6 +1032,8 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
                 full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
                 ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            else:
+                final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
 
             continue
 
