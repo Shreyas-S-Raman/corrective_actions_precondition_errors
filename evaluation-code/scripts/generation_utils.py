@@ -901,7 +901,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text+'\nStep {}:'.format(curr_step+1), executed), default_params, executed)
 
         if skip_step:
             
@@ -1180,10 +1180,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
                 curr = curr_translated[idx]
                 curr = curr[0].upper() + curr[1:]
                 curr = curr.replace('_', ' ')
-                if curr_step == 0:
-                    curr = f' {curr}'
-                else:
-                    curr = f'Step {curr_step + 1}: {curr}'
+                curr = f'Step {curr_step + 1}: {curr}'
             else:
                 curr = curr_generated[idx]
 
@@ -1210,7 +1207,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     default_params['stop'] = '\n'
 
     full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
-    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    ongoing_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
 
     final_text = example + task_prompt
 
@@ -1234,10 +1231,10 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
 
         # accumulate output and continue
         if not executed:
-            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1])
 
         if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
-            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text+'\nStep {}:'.format(curr_step+1), default_params)
             curr_idx = 0
 
         #failure check 1: no_gen_terminate
@@ -1258,8 +1255,8 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         executed = True
 
         #add best step to plan + continue
-        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
-        ongoing_text += f'{best_curr}\n'
+        full_text += f'\n{best_curr}'
+        ongoing_text += f'\n{best_curr}'
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
@@ -1331,7 +1328,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+        final_text += f'\n{best_curr}'
         final_translated_actions.append(translated_action)
 
     
@@ -1558,7 +1555,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text+'\nStep {}:'.format(curr_step+1), executed), default_params, executed)
 
 
         # if prev. step not executed: remove error and bad step before adding new step
@@ -1832,10 +1829,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
                 curr = curr_translated[idx]
                 curr = curr[0].upper() + curr[1:]
                 curr = curr.replace('_', ' ')
-                if curr_step == 0:
-                    curr = f' {curr}'
-                else:
-                    curr = f'Step {curr_step + 1}: {curr}'
+                curr = f'Step {curr_step + 1}: {curr}'
             else:
                 curr = curr_generated[idx]
 
@@ -1862,7 +1856,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
     default_params['stop'] = '\n'
 
     full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
-    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    ongoing_text = example + task_prompt if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
 
     final_text = example + task_prompt
 
@@ -1886,10 +1880,10 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
 
         # accumulate output and continue
         if not executed:
-            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+            ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1])
 
         if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
-            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text+'\nStep {}:'.format(curr_step+1), default_params)
             curr_idx = 0
 
         #failure check 1: no_gen_terminate
@@ -1910,8 +1904,8 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
         executed = True
 
         #add best step to plan + continue
-        full_text += f'\nStep 1: {best_curr}' if curr_step==0 else f'{best_curr}\n'
-        ongoing_text += f'{best_curr}\n'
+        full_text += f'\n{best_curr}'
+        ongoing_text += f'\n{best_curr}'
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
@@ -1983,7 +1977,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+        final_text += f'\n{best_curr}'
         final_translated_actions.append(translated_action)
 
     
@@ -2164,10 +2158,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
             best_curr = curr_translated[best_idx]
             best_curr = best_curr[0].upper() + best_curr[1:]
             best_curr = best_curr.replace('_', ' ')
-            if curr_step == 0:
-                best_curr = f' {best_curr}'
-            else:
-                best_curr = f'Step {curr_step + 1}: {best_curr}'
+            best_curr = f'Step {curr_step + 1}: {best_curr}'
         else:
             best_curr = curr_generated[best_idx]
         if verbose:
@@ -2189,7 +2180,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
     full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
 
-    ongoing_text = example + task_prompt + '\nStep 1:' if not step_by_step else example + task_prompt + '\nLet\'s think step by step.' + '\nStep 1:'
+    ongoing_text = example + task_prompt if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
     final_text = example + task_prompt
 
     all_translated_actions = []
@@ -2209,7 +2200,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.add_incontext_examples(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.add_incontext_examples(ongoing_text+'\nStep {}:'.format(curr_step+1), executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar), default_params, executed)
 
 
         # if prev. step not executed: remove error and bad step before adding new step
@@ -2217,7 +2208,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
         if not executed:
             
             if translated_condition:
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2])
             
             else:
                 ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
@@ -2240,8 +2231,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
         #add best step to plan + continue
         
-        full_text += f'\nStep 1:{best_curr}\n' if curr_step==0 else f'{best_curr}\n'
-        ongoing_text += f'{best_curr}\n'
+        full_text += f'\n{best_curr}'
+        ongoing_text += f'\n{best_curr}'
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
@@ -2273,8 +2264,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
             error_prompt = prompt_generator.generate_prompt('parsibility', parsing_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
             
-            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
-            ongoing_text += error_prompt if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            full_text += f'\n{error_prompt}' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += f'\n{error_prompt}' if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
             continue
 
         
@@ -2289,9 +2280,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
             all_errors.append(empty_program_error)
             error_prompt = prompt_generator.generate_prompt('empty_program', empty_program_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
 
-            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
-            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
-
+            full_text += f'\n{error_prompt}' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += f'\n{error_prompt}' if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
             continue
 
 
@@ -2308,8 +2298,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
             error_prompt = prompt_generator.generate_prompt('precond', precond_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1])
 
-            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
-            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            full_text += f'\n{error_prompt}' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += f'\n{error_prompt}' if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
             continue
 
         
@@ -2334,8 +2324,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
             error_prompt = prompt_generator.generate_prompt('check_script', check_script_error, total_steps, best_curr.replace('Step {}:'.format(curr_step+1),'').strip(), parsed_program_lines[-1], message_params[0])
 
-            full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
-            ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+            full_text += f'\n{error_prompt}' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+            ongoing_text += f'\n{error_prompt}' if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
             
 
             continue
@@ -2344,7 +2334,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
-        final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+        final_text += f'\n{best_curr}'
         final_translated_actions.append(translated_action)
 
 
