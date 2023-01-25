@@ -898,7 +898,7 @@ def main(args):
 
             task_name =  example.split('\n\n')[1].split('\n')[0].split(':')[1].strip().lower()
 
-            correction_examples.append(task_name+': '+error_step)
+            correction_examples.append(error_step)
         
         pdb.set_trace()
         correction_example_embedding = sentence_model.encode(correction_examples, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)

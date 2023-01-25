@@ -138,7 +138,7 @@ def top_k_similar(model, query_str, corpus_embedding, device, top_k=1):
     # encode sentence to get sentence embeddings
     query_embedding = model.encode(query_str, convert_to_tensor=True, device=device)
     # compute similarity scores of the sentence with the corpus
-    cos_scores = st_utils.pytorch_cos_sim(query_embedding, corpus_embedding)[0]
+    cos_scores = st_utils.pytorch_cos_sim(query_embedding.to(device), corpus_embedding.to(device))[0]
     cos_scores = cos_scores.detach().cpu().numpy()
     # Sort the results in decreasing order and get the first top_k
     top_results = np.argpartition(-cos_scores, range(top_k))[0:top_k]
@@ -1383,6 +1383,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
         if isinstance(engine, str):
             response = api_retry_if_failed(default_params, max_iters=max_iters, engine=engine)
         else:
+            pdb.set_trace()
             response = engine(default_params)
 
         '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}

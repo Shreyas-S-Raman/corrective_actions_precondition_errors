@@ -139,11 +139,11 @@ class PromptContext():
 
             contextualized_text = self.context_transformation(plan_text)
 
-            target_error_step = contextualized_text.split('\n')[-3].split(':')[1].strip().lower()
+            target_error_step = contextualized_text.split('\n')[-2].split(':')[1].strip().lower()
 
             target_task = contextualized_text.split('\n')[0].split(':')[1].strip().lower()
 
-            most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_task +': '+target_error_step, corrections_example_embedding, device, top_k=3)
+            most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_error_step, corrections_example_embedding, device, top_k=2)
 
             for id in reversed(most_similar_example_idxs):
 
