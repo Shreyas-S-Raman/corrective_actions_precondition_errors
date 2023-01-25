@@ -130,7 +130,7 @@ class PromptContext():
         with open(load_path, 'r') as f:
             return f.read()
         
-    def add_incontext_examples(self, plan_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar):
+    def add_incontext_examples(self, plan_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step):
 
         if executed:
             return plan_text
@@ -154,7 +154,7 @@ class PromptContext():
 
                 contextualized_text =  example_correction + '\n'+'-'*20+'\n' + contextualized_text
 
-            return contextualized_text
+            return contextualized_text + '\nStep {}:'.format(curr_step+1)
 
 
 
