@@ -123,6 +123,39 @@ class PromptContext():
         
         else:
             return self.context_transformation(plan_text)
+    
+    def load_txt(self, load_path):
+        if load_path[-4:] != '.txt':
+            load_path += '.txt'
+        with open(load_path, 'r') as f:
+            return f.read()
+        
+    def add_incontext_examples(self, plan_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar):
+
+        if executed:
+            return plan_text
+        
+        else:
+
+            contextualized_text = self.context_transformation(plan_text)
+
+            target_error_step = contextualized_text.split('\n')[-3].split(':')[1].strip().lower()
+
+            target_task = contextualized_text.split('\n')[0].split(':')[1].strip().lower()
+
+            most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_task +': '+target_error_step, corrections_example_embedding, device, top_k=3)
+
+            for id in reversed(most_similar_example_idxs):
+
+                example_correction = self.load_txt(corrections_example_paths[id]).split('\n\n')[1]
+
+                example_correction = example_correction.split('\n')
+                example_correction = '\n'.join(example_correction[:-5] + example_correction[-2:])
+
+                contextualized_text =  example_correction + '\n'+'-'*20+'\n' + contextualized_text
+
+            return contextualized_text
+
 
 
 

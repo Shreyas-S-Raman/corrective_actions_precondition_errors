@@ -1,0 +1,18 @@
+Type: agent-proximity
+Failed Step: Find mail
+
+Task: Sent email
+Step 1: Walk to home office
+Step 2: Walk to chair
+Step 3: Find chair
+Step 4: Sit on chair
+Step 5: Find computer
+Step 6: Switch on computer
+Step 7: Turn to computer
+Step 8: Look at computer
+Step 9: Find mail
+Error Object: mail
+Error Type: not near object
+Skip: False
+Error: I am not near the mail. A correct step would be to
+Step 9: Walk to mail

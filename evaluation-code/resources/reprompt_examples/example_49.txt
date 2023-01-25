@@ -1,0 +1,11 @@
+Type: unflipped-boolean-state
+Failed Step: Open fridge
+
+Task: Put groceries in Fridge
+Step 1: Walk to kitchen
+Step 2: Walk to fridge
+Step 3: Find fridge
+Step 4: Open fridge
+Error Object: fridge
+Error Type: object is already open
+Skip: True

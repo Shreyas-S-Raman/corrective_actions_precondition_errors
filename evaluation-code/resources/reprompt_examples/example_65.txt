@@ -1,0 +1,11 @@
+Type: not-facing
+Failed Step: Point at toy
+
+Task: Put toys away
+Step 1: Find toy
+Step 2: Point at toy
+Error Object: toy
+Error Type: not facing object
+Skip: False
+Error: I am not facing the toy. A correct step would be to
+Step 2: Turn to toy

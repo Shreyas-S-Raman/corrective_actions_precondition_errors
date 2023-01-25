@@ -109,6 +109,9 @@ class Arguments:
     resampling = True #promting only by resampling (next most viable step)
     param_tuning = False
 
+    #either 'zero-shot' (for prompt template), 'few-shot' for few-shot examples, 'reasoning' for step by step reasoning
+    learned_method = 'zero-shot'
+
 def get_args():
 
     parser = argparse.ArgumentParser(description='')
@@ -181,12 +184,19 @@ def get_args():
 
     os.makedirs(args.init_graph_save_path, exist_ok=True)
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
+
+
     args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))
     args.title_embedding_path = os.path.join(args.save_dir, '{}_train_title_embedding.pt'.format(args.sentence_model)) if not args.param_tuning else os.path.join(args.save_dir, '{}_val_title_embedding.pt'.format(args.sentence_model))
+
+    args.correction_embedding_path = os.path.join(args.save_dir, '{}_correction_embedding.pt'.format(args.sentence_model))
+
 
 
     if args.example_path is None and args.example_id is None:
         assert args.use_similar_example or args.finetuned
+    
+    
 
     args.allowed_action_path = os.path.join(args.RESOURCE_DIR, 'allowed_actions.json')
     args.name_equivalence_path = os.path.join(args.RESOURCE_DIR, 'class_name_equivalence.json')
@@ -196,6 +206,9 @@ def get_args():
     args.test_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.test_paths]))
     args.train_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n') if not args.param_tuning else load_txt(os.path.join(args.RESOURCE_DIR, 'val_task_paths.txt')).strip().split('\n')
     args.train_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths]))
+
+    args.correction_example_paths = list(sorted(os.listdir(os.path.join(args.RESOURCE_DIR, 'reprompt_examples'))))
+    args.correction_example_paths = list(map(lambda x: os.path.join(args.RESOURCE_DIR, 'reprompt_examples',x), args.correction_example_paths))
     
 
     if args.scene_num is not None:

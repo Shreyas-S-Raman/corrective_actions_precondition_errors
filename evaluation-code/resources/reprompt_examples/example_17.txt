@@ -1,0 +1,13 @@
+Type: not-facing-object
+Failed Step: Point at television
+
+Task: Movie
+Step 1: Find remote control
+Step 2: Grab remote control
+Step 3: Find television
+Step 4: Point at television
+Error Object: television
+Error Type: not facing object
+Skip: False
+Error: I need to turn to face the television. A correct step would be to
+Step 4: Turn to television

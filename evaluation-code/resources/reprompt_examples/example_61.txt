@@ -1,0 +1,14 @@
+Type: agent-proximity
+Failed Step: Find computer
+
+Task: Re arrange office
+Step 1: Walk to home office
+Step 2: Walk to chair
+Step 3: Find chair
+Step 4: Sit on chair
+Step 5: Find computer
+Error Object: computer
+Error Type: not near object
+Skip: False
+Error: I am not near the computer. A correct step would be to
+Step 5: Walk to computer

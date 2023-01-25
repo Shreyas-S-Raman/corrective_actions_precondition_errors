@@ -1,0 +1,17 @@
+Type: not-facing-object
+Failed Step: Look at computer
+
+Task: Write story
+Step 1: Walk to home office
+Step 2: Walk to desk
+Step 3: Find computer
+Step 4: Switch on computer
+Step 5: Find chair
+Step 6: Pull chair
+Step 7: Sit on chair
+Step 8: Look at computer
+Error Object: computer
+Error Type: not facing the object
+Skip: False
+Error: I am not facing the computer. A correct step would be to
+Step 8: Turn to computer

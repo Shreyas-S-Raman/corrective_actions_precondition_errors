@@ -1,0 +1,8 @@
+Type: no-generation
+Failed Step: Bring me red cookbook
+
+Task: Bring me red cookbook
+Error Object: N/A
+Error: How can I bring the red cookbook? A correct step would be to
+Skip: False
+Step 1: Walk to red cookbook

@@ -1,0 +1,12 @@
+Type: not-holding
+Failed Step: Put plate on dishwasher
+
+Task: Wash dishes with dishwasher
+Step 1: Walk to dishwasher
+Step 2: Open dishwasher
+Step 3: Put plate on dishwasher
+Error Object: plate
+Error Type: not holding object
+Skip: False
+Error: I am not holding the plate. A correct step would be to
+Step 3: Grab plate

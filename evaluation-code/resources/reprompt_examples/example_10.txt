@@ -1,0 +1,14 @@
+Type: not-holding
+Failed Step: Put cutting board on kitchen counter
+
+Task: Cutting
+Step 1: Walk to kitchen
+Step 2: Find knife
+Step 3: Grab knife
+Step 4: Find cutting board
+Step 5: Put cutting board on kitchen counter
+Error Object: cutting board
+Error Type: not holding type
+Skip: False
+Error: I am not holding the cutting board. A correct step would be to
+Step 5: Grab cutting board

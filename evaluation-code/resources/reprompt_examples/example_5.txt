@@ -1,0 +1,12 @@
+Type: not-holding
+Failed Step: Read book
+
+Task: Read book
+Step 1: Find book
+Step 2: Open book
+Step 3: Read book
+Error Object: book
+Error Type: not holding object
+Skip: False
+Error: I am not holding the book. A correct step would be to
+Step 3: Grab book

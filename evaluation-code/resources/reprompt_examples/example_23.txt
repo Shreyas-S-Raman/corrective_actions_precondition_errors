@@ -1,0 +1,13 @@
+Type: agent-proximity
+Failed Step: Put mail on table
+
+Task: Set mail on table
+Step 1: Walk to table
+Step 2: Find mail
+Step 3: Grab mail
+Step 4: Put mail on table
+Error Object: table
+Error Type: not near object
+Skip: False
+Error: I am not near the table. A correct step would be to
+Step 4: Walk to table

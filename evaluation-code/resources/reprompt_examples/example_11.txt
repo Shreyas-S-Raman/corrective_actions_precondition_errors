@@ -1,0 +1,13 @@
+Type: agent-proximity
+Failed Step: Put paper on printer
+
+Task: Add paper to printer
+Step 1: Find printer
+Step 2: Find paper
+Step 3: Grab paper
+Step 4: Put paper on printer
+Error Obj: printer
+Error Type: not near the object
+Skip: False
+Error: I am not near the printer. A correct step would be to
+Step 4: Walk to printer

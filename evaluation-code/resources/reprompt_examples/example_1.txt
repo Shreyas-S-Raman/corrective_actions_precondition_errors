@@ -1,0 +1,16 @@
+Type: agent-proximity
+Failed Step: Put groceries in fridge
+
+Task: Put groceries in Fridge
+Step 1: Walk to kitchen
+Step 2: Walk to fridge
+Step 3: Find fridge
+Step 4: Open fridge
+Step 5: Find groceries
+Step 6: Grab groceries
+Step 7: Put groceries in fridge
+Error Object: fridge
+Error Type: not near object
+Skip: False
+Error: I am not near the fridge. A correct step would be to
+Step 7: Walk to fridge

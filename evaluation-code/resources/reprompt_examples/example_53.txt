@@ -1,0 +1,13 @@
+Type: not-facing-object
+Failed Step: Switch on floor lamp
+
+Task: Turn on light
+Step 1: Walk to bedroom
+Step 2: Walk to dresser
+Step 3: Find floor lamp
+Step 5: Switch on floor lamp
+Error Object: floor lamp
+Error Type: not facing object
+Skip: False
+Error: I need to turn to face the floor lamp. A correct step would be to
+Step 5: Turn to floor lamp

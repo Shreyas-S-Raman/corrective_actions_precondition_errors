@@ -1,0 +1,14 @@
+Type: agent-proximity
+Failed Step: Grab soap
+
+Task: Wash hands
+Step 1: Walk to bathroom
+Step 2: Walk to sink
+Step 3: Find faucet
+Step 4: Switch on faucet
+Step 5: Grab soap
+Error Object: soap
+Error Type: not near object
+Skip: False
+Error: I am not near the soap. A correct step would be to
+Step 6: Walk to soap

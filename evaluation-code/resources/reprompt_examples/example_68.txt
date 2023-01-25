@@ -1,0 +1,11 @@
+Type: internally-contained
+Failed Step: Pull chair
+
+Task: Sit
+Step 1: Find chair
+Step 2: Pull chair
+Error Object: chair
+Error Type: object inside something else
+Skip: False
+Error: the chair is inside the desk. A correct step would be to
+Step 2: Pull out chair

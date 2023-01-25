@@ -1,0 +1,19 @@
+Type: hands-full
+Failed Step: Grab fork
+
+Task: Eat
+Step 1: Walk to dining room
+Step 2: Walk to cupboard
+Step 3: Open cupboard
+Step 4: Find food food
+Step 5: Grab food food
+Step 6: Walk to table
+Step 7: Find plate
+Step 8: Grab plate
+Step 9: Find fork
+Step 10: Grab fork
+Error Object: fork
+Error Type: I have already grabbed plate and food food. My hands are full
+Skip: False
+Error: I cannot grab fork because my hands are full. A correct step would be to
+Step 10: Put plate on table

@@ -1,0 +1,15 @@
+Type: not-holding
+Failed Step: Pour cleaning solution into rag
+
+Task: Clean
+Step 1: Walk to bathroom
+Step 2: Walk to cleaning solution
+Step 3: Find cleaning solution
+Step 5: Find rag
+Step 6: Grab rag
+Step 7: Pour cleaning solution into rag
+Error Object: cleaning solution
+Error Type: not holding object
+Skip: False
+Error: I am not holding cleaning solution. A correct step would be to
+Step 7: Grab cleaning solution

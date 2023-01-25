@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Shop
+
+Task: Shop
+Error Object: N/A
+Error Type: no generated output
+Skip: False
+Error: How can I shop? A correct step would be to
+Step 1: Walk to home office

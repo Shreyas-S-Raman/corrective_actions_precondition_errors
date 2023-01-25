@@ -1,0 +1,14 @@
+Type: not-holding
+Failed Step: Put oil on diningtable
+
+Task: Oil dining room
+Step 1: Walk to dining room
+Step 2: Walk to oil
+Step 3: Find oil
+Step 5: Find diningtable
+Step 6: Put oil on diningtable
+Error Object: oil
+Error Type: not holding object
+Skip: False
+Error: I am not holding the oil. A correct step would be to
+Step 6: Grab oil

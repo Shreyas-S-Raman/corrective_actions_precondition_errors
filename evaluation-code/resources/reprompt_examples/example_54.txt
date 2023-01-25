@@ -1,0 +1,11 @@
+
+Type: unflipped-boolean-state
+Failed Step: Open window
+
+Task: Rain welcome
+Step 1: Walk to window
+Step 2: Open window
+Step 3: Open window
+Error Object: window
+Error Type: object is already open
+Skip: True

@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Shred receipts
+
+Task: Shred receipts
+Error Object: N/A
+Error Type: no generated output
+Skip: False
+Error: How can I shred receipts? A correct step would be to
+Step 1: Walk to home office

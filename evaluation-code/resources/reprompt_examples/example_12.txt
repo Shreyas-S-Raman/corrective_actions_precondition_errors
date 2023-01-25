@@ -1,0 +1,17 @@
+Type: internally-contained
+Failed Step: Push chair
+
+Task: Rearrange office
+Step 1: Walk to home office
+Step 2: Walk to light
+Step 3: Find light
+Step 4: Switch on light
+Step 5: Walk to desk
+Step 6: Push desk
+Step 7: Walk to chair
+Step 8: Push chair
+Error Object: chair
+Error Type: object inside something else
+Skip: False
+Error: the chair is inside the table. A correct step would be to
+Step 8: Pull out chair

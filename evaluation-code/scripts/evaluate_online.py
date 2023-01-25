@@ -209,14 +209,15 @@ def evaluate_all_scripts(script_paths, args, evaluated_scenes=range(1, 8)):
 
     return results
 
-def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args):
+def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args):
     #pdb.set_trace()
     query_task, query_desc = query_task_desc
     # determine saving file name
     info = generation_info[(query_task, query_desc, scene)]
     # generate from openai api ============================================
     # format prompt and query openai api
-    example_str = construct_example(example_path, add_desc=args.add_desc) if not args.finetuned else ''
+    example_str = construct_example(example_path, add_desc=args.add_desc)
+
     if args.verbose:
         print('*************** EXAMPLE ***************\n{}'.format(example_str.strip()))
     if args.add_desc:
@@ -239,10 +240,24 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
         else:
+
+            if args.learned_method == 'zero-shot':
             
-            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
-            verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
-            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+                final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+                verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+                beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+
+            elif args.learned_method == 'few-shot':
+
+                final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = incontext_learned_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, correction_example_embedding, args.device, action_list, args.correction_example_paths, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+                verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+                beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+
+
+            elif args.learned_method == 'reasoning':
+                pass 
+            else:
+                raise NotImplementedError()
 
         task_info['script_path'] = info['parsed_save_path']
 
@@ -320,7 +335,7 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
 
     return task_info
 
-def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
+def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, correction_example_embedding, args):
     bar = tqdm(total=len(generation_info))
 
     #create list of all scene paths (used to check executability)
@@ -329,6 +344,11 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
     
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
+
+        if query_task in set(['Vacuum','Listen to music','Do work','Breakfast','Organize', 'Make coffee']):
+            pdb.set_trace()
+        else:
+            continue
 
         scene_path = args.scene_path_format.format(scene)
 
@@ -354,7 +374,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             
-            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
+            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args)
             results.append(info)
         bar.update(1)
     #pdb.set_trace()
@@ -653,9 +673,6 @@ def construct_generation_dict(args, evaluated_scenes):
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     
-    #test = []
-    #target = ['Pick up', 'Eat', 'Hang up car keys', 'Drink', 'Put on coat', 'Wash sink', 'Answer door', 'Check email', 'Wash dishes with dishwasher', 'Clean  mirror', 'Walk through', 'Prepare Dinner', 'Shop', 'Clean sink', 'Turn on light', 'Write report', 'Wash dishes by hand', 'Text friends while sitting on couch', 'Movie', 'Get out dish', 'Straighten paintings on wall', 'Take off coat', 'Bring me red cookbook', 'Admire art', 'Computer work', 'Juggling', 'Let baby learn how to walk', 'Greet guests', 'Put on glasses', 'Rearrange photo frames', 'Plug in nightlight', 'Wash dishes', 'Add paper to printer', 'Sit', 'Play on laptop', 'Put in chair', 'Set up buffet area', 'Close door', 'Look out window', 'Put away clean clothes', 'Cutting', 'Do laundry', 'Gaze out window', 'Get ready for school', 'Answer emails', 'Get ready to leave', 'Read news', 'Write  school paper', 'Wake kids up', 'Lock door', 'Have snack', 'Get drink', 'Turking', 'Shredding', 'Send  email', 'Surf net', 'Watch  TV', 'Rain welcome', 'Change light', 'Write story', 'Turn night light on', 'Pull up carpet', 'Get ready for day', 'Pick up cat hair', 'Wash hands', 'Sweep hallway please', 'Put groceries in Fridge', 'Homework', 'Put toys away', 'Unload dishwasher', 'Oil dining room', 'Turn on TV', 'Open door', 'Shampoo hair', 'Hang with friends', 'Put umbrella away', 'Clean bathroom', 'Put away jackets', 'Open bathroom window', 'Read book', 'Spread table with appropriate supplies', 'Print out papers', 'Shave', 'Sent email', 'Throw away newspaper', 'Added meat to freezer', 'Clean', 'Set mail on table', 'Sit in chair', 'Say goodbye to guests leaving', 'Take dishes out of dishwasher', 'Shred receipts', 'Print out document', 'vacuum carpet', 'Bring dirty plate to sink', 'Shut front door', 'Cut bread', 'Load dishwasher', 'Re arrange office', 'Watch TV']
-    #pdb.set_trace()
     
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
@@ -859,6 +876,39 @@ def main(args):
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))
     else:
         title_embedding = None
+
+    pdb.set_trace()
+    if args.learned_method in set(['few-shot', 'reasoning']) and os.path.exists(args.correction_embedding_path):
+        print('loading correction embedding for planning with {}... '.format(args.learned_method), end='')
+
+        correction_example_embedding = torch.load(args.correction_embedding_path)
+
+        print('done! (time taken: {:.2f} s)'.format(time.time() - start))
+    
+    elif args.learned_method in set(['few-shot', 'reasoning']):
+        print('creating correction embedding for planning with {}... '.format(args.learned_method), end='')
+
+        correction_examples = []
+
+        for example_path in args.correction_example_paths:
+
+            example = load_txt(example_path)
+
+            error_step = example.split('\n\n')[0].split('\n')[1].split(':')[1].strip().lower()
+
+            task_name =  example.split('\n\n')[1].split('\n')[0].split(':')[1].strip().lower()
+
+            correction_examples.append(task_name+': '+error_step)
+        
+        pdb.set_trace()
+        correction_example_embedding = sentence_model.encode(correction_examples, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
+
+        # cache to device
+        torch.save(correction_example_embedding.detach().cpu(), args.correction_embedding_path)
+        print('done! (time taken: {:.2f} s)'.format(time.time() - start))
+
+
+
     # generate vh proram ============================================
     evaluated_scenes = range(1, 8) if args.scene_num is None else [args.scene_num]
     generation_info = construct_generation_dict(args, evaluated_scenes)
@@ -866,7 +916,7 @@ def main(args):
     #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
     #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
 
-    execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args)
+    execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, correction_example_embedding, args)
     #pdb.set_trace()
     parsed_program_paths = []
     for k in generation_info:

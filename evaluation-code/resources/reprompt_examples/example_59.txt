@@ -1,0 +1,16 @@
+Type: not-facing-object
+Failed Step: Look at computer
+
+Task: Check email
+Step 1: Walk to home office
+Step 2: Walk to chair,
+Step 3: Find chair
+Step 4: Sit on chair
+Step 5: Find computer
+Step 6: Switch on computer
+Step 7: Look at computer
+Error Object: computer
+Error Type: not facing object
+Skip: False
+Error: I need to turn to face the computer. A correct step would be to
+Step 7: Turn to computer

@@ -1,0 +1,15 @@
+Type: hands-full
+Failed Step: Turn on computer
+
+Task: Write school paper
+Step 1: Walk to paper
+Step 2: Grab paper
+Step 3: Walk to pen
+Step 4: Grab pen
+Step 5: Walk to computer
+Step 6: Turn on computer
+Error Object: computer
+Error Type: I have already grabbed pen and paper. My hands are full
+Skip: False
+Error: I cannot turn on computer because my hands are full. A correct step would be to
+Step 6: Put paper on table

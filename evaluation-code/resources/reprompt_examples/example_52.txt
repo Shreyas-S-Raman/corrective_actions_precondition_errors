@@ -1,0 +1,11 @@
+Type: unflipped-boolean-state
+Failed Step: Switch on faucet
+
+Task: Wash hands
+Step 1: Walk to bathroom
+Step 2: Walk to sink
+Step 3: Find faucet
+Step 4: Switch on faucet
+Error Object: faucet
+Error Type: object is already switched on
+Skip: True
