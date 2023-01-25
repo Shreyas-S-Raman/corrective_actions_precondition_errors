@@ -1540,6 +1540,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
     final_text = example + task_prompt
 
     all_translated_actions = []
+    ongoing_translated_actions = []
     all_generated_actions = []
     final_translated_actions = []
 
@@ -1569,6 +1570,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
             else:
                 ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
             
+            ongoing_translated_actions.pop()
             executed = True
 
 
@@ -1592,6 +1594,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
+        ongoing_translated_actions.append(translated_action)
         total_steps +=1
 
 
@@ -1603,8 +1606,8 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
             program_text = '\n'.join(program_lines).strip()
 
         else:
-            matched_program_text = '\n'.join(all_translated_actions).strip()
-            program_lines, parse_info = str2program_list(all_translated_actions)
+            matched_program_text = '\n'.join(ongoing_translated_actions).strip()
+            program_lines, parse_info = str2program_list(ongoing_translated_actions)
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
