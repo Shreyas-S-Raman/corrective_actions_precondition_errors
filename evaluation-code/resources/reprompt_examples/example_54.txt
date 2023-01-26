@@ -1,4 +1,3 @@
-
 Type: unflipped-boolean-state
 Failed Step: Open window
 
@@ -9,3 +8,4 @@ Step 3: Open window
 Error Object: window
 Error Type: object is already open
 Skip: True
+Step 3: Look at window

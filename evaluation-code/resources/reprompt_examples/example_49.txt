@@ -9,3 +9,4 @@ Step 4: Open fridge
 Error Object: fridge
 Error Type: object is already open
 Skip: True
+Step 4: Walk to groceries

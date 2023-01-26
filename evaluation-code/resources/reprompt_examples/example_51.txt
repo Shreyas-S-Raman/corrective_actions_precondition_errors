@@ -7,3 +7,4 @@ Step 2: Open dishwasher
 Error Object: dishwasher
 Error Type: object is already open
 Skip: True
+Step 2: Grab plate

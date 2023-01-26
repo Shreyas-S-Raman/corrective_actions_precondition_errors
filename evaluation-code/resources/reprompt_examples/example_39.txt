@@ -13,3 +13,4 @@ Step 8: Switch on faucet
 Error Object: faucet
 Error Type: object is already switched on
 Skip: True
+Step 8: Walk to cloth

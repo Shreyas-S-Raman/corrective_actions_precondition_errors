@@ -7,3 +7,4 @@ Step 2: Open door
 Error Object: door
 Error Type: object is already open
 Skip: True
+Step 2: Look at door

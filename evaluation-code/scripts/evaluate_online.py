@@ -345,11 +345,6 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
 
-        if query_task in set(['Vacuum','Listen to music','Do work','Breakfast','Organize', 'Make coffee']):
-            pdb.set_trace()
-        else:
-            continue
-
         scene_path = args.scene_path_format.format(scene)
 
         if args.use_similar_example:
@@ -877,7 +872,7 @@ def main(args):
     else:
         title_embedding = None
 
-    pdb.set_trace()
+    
     if args.learned_method in set(['few-shot', 'reasoning']) and os.path.exists(args.correction_embedding_path):
         print('loading correction embedding for planning with {}... '.format(args.learned_method), end='')
 
@@ -900,7 +895,7 @@ def main(args):
 
             correction_examples.append(error_step)
         
-        pdb.set_trace()
+        
         correction_example_embedding = sentence_model.encode(correction_examples, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
 
         # cache to device

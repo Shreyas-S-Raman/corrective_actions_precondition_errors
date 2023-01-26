@@ -11,3 +11,4 @@ Step 6: Switch on computer
 Error Object: computer
 Error Type: object is already switched on
 Skip: True
+Step 6: Type on keyboard

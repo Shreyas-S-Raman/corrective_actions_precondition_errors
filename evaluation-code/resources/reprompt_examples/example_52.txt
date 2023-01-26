@@ -9,3 +9,4 @@ Step 4: Switch on faucet
 Error Object: faucet
 Error Type: object is already switched on
 Skip: True
+Step 4: Wash hands both

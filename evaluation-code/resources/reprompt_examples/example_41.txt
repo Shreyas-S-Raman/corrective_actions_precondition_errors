@@ -9,3 +9,4 @@ Step 4: Switch on computer
 Error Object: computer
 Error Type: object is already switched on
 Skip: True
+Step 4: Type on keyboard

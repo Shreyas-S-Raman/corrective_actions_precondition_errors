@@ -2204,10 +2204,9 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
 
     #track errors until escape step
-    #pdb.set_trace()
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        #pdb.set_trace()
+        
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.add_incontext_examples(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step), default_params, executed)
