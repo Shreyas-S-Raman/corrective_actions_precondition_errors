@@ -1558,7 +1558,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text+'\nStep', executed), default_params, executed)
 
 
         # if prev. step not executed: remove error and bad step before adding new step
@@ -1889,7 +1889,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
             ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
 
         if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
-            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params)
+            alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text+'\nStep', default_params)
             curr_idx = 0
 
         #failure check 1: no_gen_terminate
@@ -2195,6 +2195,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
     all_translated_actions = []
     all_generated_actions = []
     final_translated_actions = []
+    ongoing_translated_actions = []
 
     all_errors = []
 
@@ -2209,7 +2210,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
         #pdb.set_trace()
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.add_incontext_examples(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar), default_params, executed)
+        best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.add_incontext_examples(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step), default_params, executed)
 
 
         # if prev. step not executed: remove error and bad step before adding new step
@@ -2222,6 +2223,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
             else:
                 ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
             
+            ongoing_translated_actions.pop()
             executed = True
 
 
@@ -2245,6 +2247,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
+        ongoing_translated_actions.append(translated_action)
         total_steps +=1
 
 
@@ -2256,8 +2259,8 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
             program_text = '\n'.join(program_lines).strip()
 
         else:
-            matched_program_text = '\n'.join(all_translated_actions).strip()
-            program_lines, parse_info = str2program_list(all_translated_actions)
+            matched_program_text = '\n'.join(ongoing_translated_actions).strip()
+            program_lines, parse_info = str2program_list(ongoing_translated_actions)
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
