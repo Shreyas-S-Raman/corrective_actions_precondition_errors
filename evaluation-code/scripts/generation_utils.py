@@ -1447,7 +1447,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
 
             #modify_objects_unity2script(helper, script, precond)
             executable_mask = 1.0
-            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
+            overall_score = _get_score_product(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             if verbose:
@@ -2099,7 +2099,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
 
             #modify_objects_unity2script(helper, script, precond)
             executable_mask = 1.0
-            overall_score = _get_score_sum(matching_score, logprob, executable_mask)
+            overall_score = _get_score_product(matching_score, logprob, executable_mask)
             '''matching_score + beta * log_prob'''
 
             if verbose:
