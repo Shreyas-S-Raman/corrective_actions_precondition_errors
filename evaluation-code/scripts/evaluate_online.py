@@ -739,19 +739,7 @@ def construct_generation_dict(args, evaluated_scenes):
                     generation_info[(task, desc, scene)]['gt_sketch_text'] = [sketch_text]
                     generation_info[(task, desc, scene)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
-    #pdb.set_trace()
 
-    #new_dict = {}
-    
-    #for k,v in generation_info.items():
-        #new_dict[k[0]+'_'+str(k[2])] = v
-        #new_dict[k[0]+'_'+str(k[2])]['gt_program_text'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
-        #new_dict[k[0]+'_'+str(k[2])]['gt_program_lines'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
-    
-
-    #with open("generation_info.json", "w") as outfile:
-    #    json.dump(new_dict, outfile)
-    #pdb.set_trace()
 
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
     return generation_info

@@ -2363,8 +2363,6 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 
-
-
 def predicted_learned_api_request_one_error_full(example, task_prompt, api_params, sentence_model, action_list_embedding, corrections_example_embedding, device, action_list, corrections_example_paths, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
     
     
@@ -2733,7 +2731,6 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
         'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step,  'no_gen_error':no_gen_error, 'score_error':score_error,  'all_errors': '\n'.join(all_errors)}
 
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
-
 
 
 def arg2abstract(program_lines):
