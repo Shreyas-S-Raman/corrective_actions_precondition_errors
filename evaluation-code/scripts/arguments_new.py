@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 187
+    expID = 188
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -54,7 +54,7 @@ class Arguments:
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.7 #0.5 best (for score sum)
+    api_cutoff_threshold = 0.5 #0.5 best (for score sum)
     api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 

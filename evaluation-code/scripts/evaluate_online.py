@@ -578,7 +578,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
 
         info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc, scene)]
             
-
+    # pdb.set_trace()
     avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
     
 
@@ -744,10 +744,13 @@ def construct_generation_dict(args, evaluated_scenes):
     #new_dict = {}
     
     #for k,v in generation_info.items():
-    #    new_dict[k[0]+'_'+str(k[2])] = v
-    #    new_dict[k[0]+'_'+str(k[2])]['gt_program_text'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
-    #    new_dict[k[0]+'_'+str(k[2])]['gt_program_lines'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
+        #new_dict[k[0]+'_'+str(k[2])] = v
+        #new_dict[k[0]+'_'+str(k[2])]['gt_program_text'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
+        #new_dict[k[0]+'_'+str(k[2])]['gt_program_lines'] = new_dict[k[0]+'_'+str(k[2])]['gt_program_text'][0]
+    
 
+    #with open("generation_info.json", "w") as outfile:
+    #    json.dump(new_dict, outfile)
     #pdb.set_trace()
 
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
