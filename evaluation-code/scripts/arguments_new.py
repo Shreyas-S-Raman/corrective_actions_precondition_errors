@@ -110,7 +110,7 @@ class Arguments:
     param_tuning = False
 
     #either 'zero-shot' (for prompt template), 'few-shot' for few-shot examples, 'reasoning' for step by step reasoning
-    learned_method = 'few-shot'
+    learned_method = 'reasoning'
 
 def get_args():
 
