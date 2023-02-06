@@ -1,0 +1,13 @@
+Type: sitting-or-lying-down
+Failed Step: Grab remote
+
+Task: Watch TV
+Step 1: Walk to living room
+Step 2: Find remote
+Step 3: Sit on couch
+Step 4: Grab remote
+Error Object: N/A
+Error Type: I am sitting or lying down
+Skip: False
+Error: I am sitting down and need to stand up. A correct step would be to
+Step 4: Stand up

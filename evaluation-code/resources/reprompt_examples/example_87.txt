@@ -1,0 +1,18 @@
+Type: hands-full
+Failed Step: Open dresser
+
+Task: Put away clean clothes
+Step 1: Walk to bathroom
+Step 2: Walk to bucket
+Step 3: Grab bucket
+Step 4: Walk to soap 
+Step 5: Find soap
+Step 6: Grab soap
+Step 7: Walk to mop
+Step 8: Find mop
+Step 9: Grab mop
+Error Object: mop
+Error Type: My hands are full
+Skip: False 
+Error : I cannot grab mop because my hands are full. A correct step would be to 
+Step 9: Put soap in bucket

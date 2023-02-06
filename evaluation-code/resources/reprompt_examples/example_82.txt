@@ -1,0 +1,10 @@
+Type: door-closed
+Failed Step: Walk to bathroom
+
+Task: Clean
+Step 1: Walk to bathroom
+Error Object: door to bathroom
+Error Type: door between two rooms is closed
+Skip: False 
+Error : The door to bathroom is closed. A correct step would be to 
+Step 1: Open door

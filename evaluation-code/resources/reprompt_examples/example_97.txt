@@ -1,0 +1,16 @@
+Type: sitting-or-lying-down
+Failed Step: Put cup in sink
+
+Task: Drink
+Step 1: Walk to dining room
+Step 2: Walk to sink
+Step 3: Find kitchen counter
+Step 4: Find cup
+Step 5: Grab cup
+Step 7: Sit on chair
+Step 8: Put cup in sink
+Error Object: cup
+Error Type: I am sitting or lying down
+Skip: False
+Error: I am sitting down and need to stand up. A correct step would be to
+Step 8: Stand up

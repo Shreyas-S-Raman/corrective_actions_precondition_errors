@@ -1,0 +1,16 @@
+Type: sitting-or-lying-down
+Failed Step: Put paper on printer
+
+Task: Add paper to printer
+Step 1: Find printer
+Step 2: Find paper
+Step 3: Grab paper
+Step 4: Walk to printer
+Step 5: Walk to chair
+Step 6: Sit on chair
+Step 7: Put paper on printer
+Error Object: N/A
+Error Type: I am sitting or lying down
+Skip: False
+Error: I am sitting and need to stand up. A correct step would be to
+Step 7: Stand up

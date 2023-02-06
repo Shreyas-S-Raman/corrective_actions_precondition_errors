@@ -1,0 +1,14 @@
+Type: door-closed
+Failed Step: Walk to dining room
+
+Task: Eat
+Step 1: Walk to kitchen
+Step 2: Walk to fridge
+Step 3: Open fridge
+Step 4: Grab food food
+Step 5: Walk to dining room
+Error Object: door to dining room
+Error Type: door between two rooms is closed
+Skip: False 
+Error : The door to dining room is closed. A correct step would be to 
+Step 5: Open door

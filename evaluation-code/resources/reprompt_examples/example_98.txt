@@ -1,0 +1,19 @@
+Type: sitting-or-lying-down
+Failed Step: Grab fork
+
+Task: Eat
+Step 1: Walk to dining room
+Step 2: Walk to cupboard
+Step 3: Open cupboard
+Step 4: Find food food
+Step 5: Grab food food
+Step 6: Walk to table
+Step 7: Find plate
+Step 8: Grab plate
+Step 9: Sit on chair
+Step 10: Grab fork
+Error Object: N/A
+Error Type: I am sitting or lying down
+Skip: False
+Error: I am sitting and need to stand up. A correct step would be to
+Step 10: Stand up

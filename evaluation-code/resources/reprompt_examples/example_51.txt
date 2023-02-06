@@ -2,9 +2,12 @@ Type: unflipped-boolean-state
 Failed Step: Open dishwasher
 
 Task: Wash dishes with dishwasher
-Step 1: Walk to dishwasher
-Step 2: Open dishwasher
+Step 1: Walk to kitchen
+Step 2: Walk to plate
+Step 3: Grab plate
+Step 4: Walk to dishwasher
+Step 5: Open dishwasher
 Error Object: dishwasher
 Error Type: object is already open
 Skip: True
-Step 2: Grab plate
+Step 5: Put plate in dishwasher

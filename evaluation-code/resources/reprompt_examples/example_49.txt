@@ -3,10 +3,12 @@ Failed Step: Open fridge
 
 Task: Put groceries in Fridge
 Step 1: Walk to kitchen
-Step 2: Walk to fridge
-Step 3: Find fridge
-Step 4: Open fridge
+Step 2: Walk to groceries
+Step 3: Grab groceries
+Step 4: Walk to fridge
+Step 5: Find fridge
+Step 6: Open fridge
 Error Object: fridge
 Error Type: object is already open
 Skip: True
-Step 4: Walk to groceries
+Step 6: Walk to groceries

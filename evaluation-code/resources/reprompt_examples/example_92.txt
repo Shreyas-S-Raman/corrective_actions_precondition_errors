@@ -1,0 +1,19 @@
+Type: hands-full
+Failed Step: Put groceries in fridge
+
+Task: Put groceries in Fridge
+Step 1: Walk to kitchen
+Step 2: Walk to food cereal
+Step 3: Find food cereal
+Step 4: Grab food cereal
+Step 5: Walk to food cheese
+Step 6: Find food cheese
+Step 7: Grab food cheese
+Step 8: Walk to milk
+Step 9: Find milk
+Step 10: Grab milk
+Error Object : milk
+Error Type: my hands are full
+Skip: False
+Error: I am already holding food cheese and food cereal, so I cannot grab milk. A correct step would be to 
+Step 10: Put food cereal in fridge
