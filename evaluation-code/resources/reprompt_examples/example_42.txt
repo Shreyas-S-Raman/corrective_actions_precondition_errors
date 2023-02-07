@@ -2,7 +2,7 @@ Type: no-generation
 Failed Step: Do laundry
 
 Task: Do laundry
-Error Object: N/A
+Error Object: none
 Error Type: no generated output
 Skip: False
 Error: How can I do laundry? A correct step would be to

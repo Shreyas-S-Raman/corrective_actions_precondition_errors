@@ -2,7 +2,7 @@ Type: no-generation
 Failed Step: Close door
 
 Task: Close door
-Error Object: N/A
+Error Object: none
 Error Type: no generated output
 Skip: False
 Error: How can I close the door? A correct step would be to

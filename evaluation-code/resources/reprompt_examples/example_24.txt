@@ -2,7 +2,7 @@ Type: no-generation
 Failed Step: Lock doors
 
 Task: Lock doors
-Error Object: N/A
+Error Object: none
 Error Type: no generated output
 Skip: False
 Error: How can I lock the door? A correct step would be to

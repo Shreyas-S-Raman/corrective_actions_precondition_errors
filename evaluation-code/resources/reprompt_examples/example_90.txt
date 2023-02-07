@@ -9,7 +9,7 @@ Step 4: Walk to printer
 Step 5: Walk to chair
 Step 6: Sit on chair
 Step 7: Put paper on printer
-Error Object: N/A
+Error Object: None
 Error Type: I am sitting or lying down
 Skip: False
 Error: I am sitting and need to stand up. A correct step would be to

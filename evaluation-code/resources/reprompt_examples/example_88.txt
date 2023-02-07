@@ -8,7 +8,7 @@ Step 3: Walk to pencil
 Step 4: Grab pencil
 Step 5: Sit on chair
 Step 6: Put pencil on desk
-Error Object: N/A
+Error Object: None
 Error Type: I am sitting or lying down
 Skip: False
 Error: I am sitting and need to stand up. A correct step would be to

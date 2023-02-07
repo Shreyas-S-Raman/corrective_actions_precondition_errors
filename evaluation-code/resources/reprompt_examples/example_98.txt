@@ -12,7 +12,7 @@ Step 7: Find plate
 Step 8: Grab plate
 Step 9: Sit on chair
 Step 10: Grab fork
-Error Object: N/A
+Error Object: None
 Error Type: I am sitting or lying down
 Skip: False
 Error: I am sitting and need to stand up. A correct step would be to

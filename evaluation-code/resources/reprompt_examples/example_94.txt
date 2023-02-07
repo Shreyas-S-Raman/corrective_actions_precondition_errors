@@ -6,7 +6,7 @@ Step 1: Walk to bedroom
 Step 2: Walk to bed
 Step 3: Lie on bed
 Step 4: Switch off light
-Error Object: N/A
+Error Object: None
 Error Type: I am sitting or lying down
 Skip: False
 Error: I am lying down and need to stand up. A correct step would be to

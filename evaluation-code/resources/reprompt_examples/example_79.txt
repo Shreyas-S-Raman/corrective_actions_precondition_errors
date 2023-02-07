@@ -4,7 +4,7 @@ Failed Step: Go near bed
 Task: Make the bed 
 Step 1: Find bed 
 Step 2: Go near bed 
-Error Object: N/A
+Error Object: None
 Error Type: I am sitting or lying down
 Skip: False
 Error: I am sitting down and need to stand up. A correct step would be to
