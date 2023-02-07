@@ -111,6 +111,11 @@ class Arguments:
 
     #either 'zero-shot' (for prompt template), 'few-shot' for few-shot examples, 'reasoning' for step by step reasoning
     learned_method = 'reasoning'
+    num_examples = 10
+    api_generation_temperature = 0.7
+    api_generation_presence_penalty = 0.7
+    api_generation_frequency_penalty = 0.3
+    default_error = 'Task failed. A correct step would be to'
 
 def get_args():
 
@@ -255,6 +260,19 @@ def get_args():
             "seed": args.seed
         }
 
+    args.api_generation_params = \
+        {
+            "max_tokens": args.api_max_tokens,
+            "temperature": args.api_generation_temperature,
+            "top_p": args.api_top_p,
+            "n": args.api_n,
+            "logprobs": args.api_logprobs,
+            "echo": args.api_echo,
+            "presence_penalty": args.api_generation_presence_penalty,
+            "frequency_penalty":args.api_generation_frequency_penalty,
+            "stop": '\n',
+            "seed": args.seed
+        }
 
 
     return args
