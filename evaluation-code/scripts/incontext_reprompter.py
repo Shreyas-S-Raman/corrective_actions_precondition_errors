@@ -85,7 +85,7 @@ class IncontextReprompter(PromptContext):
         ongoing_text_with_examples = self.add_incontext_examples(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
         #step 1: generate error object
-        ongoing_text = ongoing_text_with_examples + '\nError Object:'
+        ongoing_text = ongoing_text_with_examples + 'Error Object:'
         error_obj, no_gen = self._generate_text(ongoing_text, 'error_object')
 
         ongoing_text  = ongoing_text + ' ' + error_obj if not no_gen else ongoing_text + ' N/A'
@@ -109,7 +109,7 @@ class IncontextReprompter(PromptContext):
         #step 4: generate error information
         ongoing_text += '\nError:'
         error_prompt, no_gen = self._generate_text(ongoing_text, 'error_prompt')
-
+        error_prompt = error_prompt.split('.')[0] + '. A correct step would be to'
         ongoing_text = ongoing_text + ' ' + error_prompt if not no_gen else ongoing_text + ' ' + self.default_error_message
 
         ongoing_text += '\nStep {}:'.format(curr_step+1)

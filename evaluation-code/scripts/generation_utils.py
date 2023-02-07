@@ -2363,7 +2363,7 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
     return _format_api_output(final_text.strip()), final_translated_actions, _format_api_output(full_text.strip()), all_generated_actions, all_translated_actions, info
 
 
-def predicted_learned_api_request_one_error_full(example, task_prompt, api_params, sentence_model, action_list_embedding, corrections_example_embedding, device, action_list, corrections_example_paths, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
+def predicted_learned_api_request_one_error_full(example, task_prompt, api_params, api_generation_params, sentence_model, action_list_embedding, corrections_example_embedding, device, action_list, corrections_example_paths, raw_lm, scene_path, scene_num, prompt_args, max_iters=1000, max_steps=20, verbose=False, cutoff_threshold=-100, beta=0.5, percent_terminate=0.6, engine='davinci-codex', translated_condition=False, step_by_step = False, add_executable_mask = False):
     
     
 
@@ -2548,7 +2548,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
     default_params['stop'] = '\n'
 
 
-    incontext_replanner = IncontextReprompter(prompt_args, copy.deepcopy(default_params), percent_terminate, engine, max_iters, api_retry_if_failed)
+    incontext_replanner = IncontextReprompter(prompt_args, copy.deepcopy(api_generation_params), percent_terminate, engine, max_iters, api_retry_if_failed)
     
 
     full_text = example + task_prompt  if not step_by_step else example + task_prompt + '\nLet\'s think step by step.'
@@ -2658,7 +2658,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             empty_program_error = 'Script Fail: empty program'
 
             all_errors.append(empty_program_error)
-            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
+            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
             if not skip_error:
                 full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
@@ -2677,7 +2677,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
 
             all_errors.append(precond_error)
 
-            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
+            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
 
             if not skip_error:
@@ -2704,8 +2704,8 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             check_script_error = message
 
             all_errors.append(check_script_error)
-
-            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
+            pdb.set_trace()
+            error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
             if not skip_error:
                 full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
