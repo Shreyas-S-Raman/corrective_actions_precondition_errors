@@ -113,7 +113,7 @@ class Arguments:
     learned_method = 'reasoning'
     num_examples = 10
     api_generation_temperature = 0.7
-    api_generation_presence_penalty = 0.7
+    api_generation_presence_penalty = 0.6
     api_generation_frequency_penalty = 0.3
     default_error = 'Task failed. A correct step would be to'
 
@@ -194,7 +194,7 @@ def get_args():
     args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))
     args.title_embedding_path = os.path.join(args.save_dir, '{}_train_title_embedding.pt'.format(args.sentence_model)) if not args.param_tuning else os.path.join(args.save_dir, '{}_val_title_embedding.pt'.format(args.sentence_model))
 
-    args.correction_embedding_path = os.path.join(args.save_dir, '{}_correction_embedding.pt'.format(args.sentence_model))
+    args.correction_embedding_path = os.path.join(args.save_dir, '{}_correction_embedding_full_plan.pt'.format(args.sentence_model))
 
 
 

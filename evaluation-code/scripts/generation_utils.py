@@ -2704,7 +2704,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             check_script_error = message
 
             all_errors.append(check_script_error)
-            pdb.set_trace()
+            
             error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
             if not skip_error:

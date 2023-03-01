@@ -348,11 +348,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
         
-        if query_task in set(['Chop vegetables','Eat cereal','Get glass of milk','Mop floor','Put out flowers','Set up table','Sort Laundry','Style Hair','Wash clothes']):
-            pdb.set_trace()
-        else:
-            bar.update(1)
-            continue
+        
 
         scene_path = args.scene_path_format.format(scene)
 

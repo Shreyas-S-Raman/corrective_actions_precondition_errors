@@ -6,6 +6,7 @@ class IncontextReprompter(PromptContext):
     def __init__(self, prompt_args, generation_params, percent_terminate, engine, max_iters, api_retry_if_failed):
 
         self.num_examples = prompt_args['num_examples']
+        generation_params['stop']='\n'
         self.generation_params = generation_params
         self.percent_terminate = percent_terminate
         self.engine = engine
@@ -24,14 +25,18 @@ class IncontextReprompter(PromptContext):
         target_error_step = contextualized_text.split('\n')[-2].split(':')[1].strip().lower()
 
         target_task = contextualized_text.split('\n')[0].split(':')[1].strip().lower()
+        target_plan = contextualized_text.strip()         
 
-        most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_error_step, corrections_example_embedding, device, top_k=self.num_examples)
+        most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_plan, corrections_example_embedding, device, top_k=self.num_examples)
+        
+        np.random.shuffle(most_similar_example_idxs)
 
-        for id in reversed(most_similar_example_idxs):
+        for id in most_similar_example_idxs:
 
             example_correction = self.load_txt(corrections_example_paths[id]).split('\n\n')[1]
 
-            contextualized_text =  example_correction + '\n'+'-'*20+'\n' + contextualized_text
+            #contextualized_text =  example_correction + '\n'+'-'*20+'\n' + contextualized_text
+            contextualized_text = example_correction + '\n\n' + contextualized_text
 
         return contextualized_text
     
