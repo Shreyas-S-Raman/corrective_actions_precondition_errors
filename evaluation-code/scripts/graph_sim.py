@@ -168,23 +168,18 @@ if __name__ == '__main__':
 
             # -- groundtruth file name is given as a mapped value in the JSON/dict:
             groundtruth_file_name = gt_dict[key]['gt_path']
-        
-            avg_similarity = 0
+            
+                   
+            # -- each generated file's name consists of the task description with some textual modifications AND scene number:
+            x = int(key[-1])
+            generated_file_name = gen_program_dir + '/' + str(key)[:-1].split(',')[0][:-1].lower().replace(' ', '_') + '-1-scene' + str(x) + '.txt'
 
-            for x in range(1,8):
-                # -- each generated file's name consists of the task description with some textual modifications AND scene number:
-                #generated_file_name = gen_program_dir + '/' + str(key)[1:-1].split(',')[0][1:-1].lower().replace(' ', '_') + '-1-scene' + str(x) + '.txt'
-                generated_file_name = gen_program_dir + '/' + str(key)[:-2].lower().replace(' ', '_') + '-1'+ '.txt'
-                #print(generated_file_name)
-                sim_value = measure_graph_similarity(groundtruth_file_name, generated_file_name, x)
-                avg_similarity += sim_value
+            sim_value = measure_graph_similarity(groundtruth_file_name, generated_file_name, x)
+            
+            print('task ' + key + ': ' + str(sim_value) + '%')
 
-            avg_similarity /= 7.0
-
-            print('task ' + key + ': ' + str(avg_similarity) + '%')
-
-            if avg_similarity >= 0:
-                overall_avg_similarity += avg_similarity
+            if sim_value >= 0:
+                overall_avg_similarity += sim_value
                 num_tasks += 1
 
         overall_avg_similarity /= num_tasks
