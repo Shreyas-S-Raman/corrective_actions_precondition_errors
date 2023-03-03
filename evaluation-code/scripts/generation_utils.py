@@ -1870,6 +1870,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
     all_translated_actions = []
     all_generated_actions = []
     final_translated_actions = []
+    ongoing_translated_actions = []
 
     all_errors = []
 
@@ -1888,6 +1889,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
         # accumulate output and continue
         if not executed:
             ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\nStep 1:' if curr_step==0  else '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
+            ongoing_translated_actions.pop()
 
         if executed or curr_idx == default_params['n'] or 'PARSING ERROR' in alternative_curr[curr_idx]:
             alternative_curr, alternative_generated, alternative_translate, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text+'\nStep', default_params)
@@ -1916,6 +1918,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
 
         all_translated_actions.append(translated_action)
         all_generated_actions.append(generated_action)
+        ongoing_translated_actions.append(translated_action)
         total_steps +=1
         curr_idx += 1
 
@@ -1928,8 +1931,8 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
             program_text = '\n'.join(program_lines).strip()
 
         else:
-            matched_program_text = '\n'.join(all_translated_actions).strip()
-            program_lines, parse_info = str2program_list(all_translated_actions)
+            matched_program_text = '\n'.join(ongoing_translated_actions).strip()
+            program_lines, parse_info = str2program_list(ongoing_translated_actions)
             program_lines = remove_same_consecutive(program_lines)
             program_text = '\n'.join(program_lines).strip()
 
@@ -2477,10 +2480,23 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             curr_translated.append(translated_action)
             curr_logprobs.append(logprob)
             curr_generated.append(generated_text)
+
+            resample_check = translated_action[0].upper() + translated_action[1:]
+            resample_check = resample_check.replace('_', ' ')
+            if curr_step == 0:
+                resample_check = f' {resample_check}'
+            else:
+                resample_check = f'Step {curr_step + 1}: {resample_check}'
+
+            
+
+
             # penalize seen actions
             if (translated_action in final_translated_actions) or (len(all_translated_actions) > 0 and translated_action == all_translated_actions[-1]):
                 if verbose:
                     print('=' * 40 + f'\n== {translated_action} has been seen, assigning score 0...\n' + '=' * 40)
+                curr_overall.append(-100)
+            elif skipped_step is not None and resample_check == skipped_step: 
                 curr_overall.append(-100)
             else:
                 curr_overall.append(overall_score)
@@ -2565,6 +2581,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
 
     curr_step = 0; total_steps = 0
     executed = True; skip_error = False
+    skipped_step = None
 
 
     #track errors until escape step
@@ -2573,8 +2590,9 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
         
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
-        if not executed and skip_error is False:
+        if not executed:
             best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text_with_errors, default_params, executed)
+
         else:
             best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action(ongoing_text, default_params, executed)
 
@@ -2583,11 +2601,15 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
         
         if not executed:
             
-            if translated_condition:
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
-            
+            if not skip_error:
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\n' if translated_condition else '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
+                
             else:
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
+
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1])
+
+                skip_error = False
+                skipped_step = None
             
             ongoing_translated_actions.pop()
             executed = True
@@ -2641,12 +2663,16 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             all_errors.append(parsing_error)
 
             error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
+
             
 
             if not skip_error:
-                full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+                full_text += error_prompt + '\n' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
                 ongoing_text += error_prompt if translated_action else '{}\nStep {}:'.format(error_prompt, curr_step+1)
-                continue
+            else:
+                skipped_step = best_curr
+            
+            continue
 
         
 
@@ -2660,10 +2686,14 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             all_errors.append(empty_program_error)
             error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
+
             if not skip_error:
-                full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
+                full_text += error_prompt + '\n' if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
                 ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt, curr_step+1)
-                continue
+            else:
+                skipped_step = best_curr
+            
+            continue
 
 
     
@@ -2680,10 +2710,14 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
 
+
             if not skip_error:
-                full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+                full_text += error_prompt + '\n' if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
                 ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
-                continue
+            else:
+                skipped_step = best_curr
+            
+            continue
 
         
         #take a single step/action in the VH scene
@@ -2707,17 +2741,22 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
             
             error_prompt, ongoing_text_with_errors, skip_error = incontext_replanner.generate_error(ongoing_text, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step)
 
+
             if not skip_error:
-                full_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
+                full_text += error_prompt + '\n' if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
                 ongoing_text += error_prompt if translated_condition else '{}\nStep {}:'.format(error_prompt,curr_step+1)
             
-                continue
+            else:
+                skipped_step = best_curr
+            
+            continue
 
 
         #if all failure checks pass: then increment step
         curr_step += 1
         #add best step to plan + continue
         final_text += f'\n{best_curr}' if curr_step > 1 else f'\nStep 1:{best_curr}'
+
         final_translated_actions.append(translated_action)
 
 
