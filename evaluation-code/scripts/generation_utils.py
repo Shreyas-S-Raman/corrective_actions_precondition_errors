@@ -2226,6 +2226,9 @@ def incontext_learned_api_request_one_error_full(example, task_prompt, api_param
             else:
                 ongoing_text = '\n'.join(ongoing_text.split('\n')[:-3]) + '\nStep {}:'.format(curr_step+1)
             
+            if curr_step == 0:
+                ongoing_text += 'Step {}:'.format(curr_step + 1)
+
             ongoing_translated_actions.pop()
             executed = True
 
@@ -2606,11 +2609,14 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
                 
             else:
 
-                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-1])
+                ongoing_text = '\n'.join(ongoing_text.split('\n')[:-2]) + '\n'
 
                 skip_error = False
                 skipped_step = None
             
+            if curr_step == 0:
+                ongoing_text += 'Step {}:'.format(curr_step+1)
+
             ongoing_translated_actions.pop()
             executed = True
 

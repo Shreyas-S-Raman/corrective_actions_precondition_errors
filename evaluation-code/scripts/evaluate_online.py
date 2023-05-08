@@ -348,11 +348,12 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
         
-        if query_task in set(['Chop vegetables','Eat cereal','Get glass of milk','Mop floor','Put out flowers','Set up table','Sort Laundry','Style Hair','Wash clothes']):
-            pdb.set_trace()
-        else:
-            bar.update(1)
-            continue
+        #if query_task in set(['Keep cats out of room']):
+        #    pdb.set_trace()
+        #    pass
+        #else:
+        #    bar.update(1)
+        #    continue
 
         scene_path = args.scene_path_format.format(scene)
 
@@ -681,7 +682,9 @@ def construct_generation_dict(args, evaluated_scenes):
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
         task = load_txt(test_path).strip().split('\n')[0]
-
+        
+        #if task not in set(['Wash clothes','Set up table','Get glass of milk','Mop floor','Chop vegetables','Put out flowers','Sort laundry','Style hair']):
+        #continue
         
         for scene in evaluated_scenes:
             #pdb.set_trace()
@@ -873,6 +876,8 @@ def main(args):
         title_embedding = None
 
     
+    correction_example_embedding = None
+
     if args.learned_method in set(['few-shot', 'reasoning']) and os.path.exists(args.correction_embedding_path):
         print('loading correction embedding for planning with {}... '.format(args.learned_method), end='')
 

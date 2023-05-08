@@ -24,7 +24,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 1000
+    expID = 196
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -49,12 +49,12 @@ class Arguments:
     api_echo = False
     api_presence_penalty = 0.5 #0.3 best 
     api_frequency_penalty = 0.3 #original: 0.3
-    api_best_of = 1
+    #api_best_of = 1
 
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.5 #0.5 best (for score sum)
+    api_cutoff_threshold = 0.44 #0.5 best (for score sum)
     api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 
@@ -68,7 +68,7 @@ class Arguments:
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
     engine = 'davinci-instruct-beta' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
-    allow_charges = False #allow non-codex models from openai api
+    allow_charges = True #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
 
@@ -115,6 +115,7 @@ class Arguments:
     api_generation_temperature = 0.7
     api_generation_presence_penalty = 0.6
     api_generation_frequency_penalty = 0.3
+    api_generation_n = 1
     default_error = 'Task failed. A correct step would be to'
 
 def get_args():
@@ -265,7 +266,7 @@ def get_args():
             "max_tokens": args.api_max_tokens,
             "temperature": args.api_generation_temperature,
             "top_p": args.api_top_p,
-            "n": args.api_n,
+            "n": args.api_generation_n,
             "logprobs": args.api_logprobs,
             "echo": args.api_echo,
             "presence_penalty": args.api_generation_presence_penalty,

@@ -1,5 +1,6 @@
 from prompt_generator import PromptContext
 import numpy as np
+import pdb
 
 class IncontextReprompter(PromptContext):
 
@@ -21,9 +22,10 @@ class IncontextReprompter(PromptContext):
 
         contextualized_text = self.context_transformation(plan_text)
 
-       
-        target_error_step = contextualized_text.split('\n')[-2].split(':')[1].strip().lower()
-
+        try: 
+            target_error_step = contextualized_text.split('\n')[-2].split(':')[1].strip().lower()
+        except:
+            pdb.set_trace()
         target_task = contextualized_text.split('\n')[0].split(':')[1].strip().lower()
         target_plan = contextualized_text.strip()         
 
@@ -108,7 +110,7 @@ class IncontextReprompter(PromptContext):
         ongoing_text_with_examples  = ongoing_text_with_examples + ' ' + error_skip if not no_gen else ongoing_text_with_examples + ' False'
 
         if error_skip == 'True':
-            ongoing_text += 'Step {}:'.format(curr_step+1)
+            ongoing_text += 'Step {}:'.format(curr_step+2)
             return None, ongoing_text, True
 
 
@@ -117,12 +119,14 @@ class IncontextReprompter(PromptContext):
         
         error_prompt, no_gen = self._generate_text(ongoing_text_with_examples, 'error_prompt')
         error_prompt = error_prompt.split('.')[0] + '. A correct step would be to'
-        # ongoing_text_with_examples = ongoing_text_with_examples + ' ' + error_prompt if not no_gen else ongoing_text_with_examples + ' ' + self.default_error_message
+        ongoing_text_with_examples = ongoing_text_with_examples + ' ' + error_prompt if not no_gen else ongoing_text_with_examples + ' ' + self.default_error_message
 
         ongoing_text += 'Error: ' + error_prompt if not no_gen else 'Error: ' + self.default_error_message
         ongoing_text += '\nStep {}:'.format(curr_step+1)
+        
+        ongoing_text_with_examples += '\nStep {}:'.format(curr_step+1)
 
-        return '\nError: ' + error_prompt, ongoing_text, False
+        return 'Error: ' + error_prompt, ongoing_text_with_examples, False
         
         
         
