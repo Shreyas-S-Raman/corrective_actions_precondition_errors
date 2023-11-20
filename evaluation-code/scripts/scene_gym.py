@@ -25,6 +25,8 @@ class SceneGym():
         #NOTE: assign objects and modify internal graph only on first step
         (message, message_params, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script, ___) = check_script(program_lines, precond, self.scene_path, inp_graph_dict=self.graph_dict, modify_graph=True if self.steps==0 else False, id_mapping=self.id_mapping, info=self.info, graph_helper = self.graph_helper)
 
+        #print(message)
+
         #new graph dictionary is final dictionary in list of dicts
         self.prev_graphs_stack.append((self.steps, self.graph_dict))
         self.graph_dict = graph_state_list[-1]
@@ -61,7 +63,6 @@ class SceneGym():
 
     def reset_graph_dict(self, target_step):
         '''resets the graph_dict field to the graph at the required target step'''
-
 
         while self.prev_graphs_stack[-1][0]!=target_step:
             self.prev_graphs_stack.pop()

@@ -46,6 +46,9 @@ class CausalErrors:
     #already sitting: character, subtype, type
     ALREADY_SITTING1 = ['{} sitting', ['character']]
 
+    #already standing: character, subtype, type
+    ALREADY_STANDING1 = ['{} standing', ['character']]
+
     #no path: char_room, target_room, subtype, type
     NO_PATH1 = ['The {} and {} are not connected', ['char_room','target_room']]
 
@@ -82,3 +85,6 @@ class CausalErrors:
 
     #invalid room: char_room, target_room, subtype, type
     INVALID_ROOM1 = ['{} doesn\'t exist', ['target_room']]
+
+    #already holding
+    ALREADY_HOLDING1 = ['{} already holding the {}', ['character','obj']]

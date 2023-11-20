@@ -84,7 +84,7 @@ class ErrorParsing():
         error_param = error_param.replace('[','').replace(']','')
         error_param = error_param.replace('<','').replace('>','')
         error_param = error_param.replace('(','').replace(')','')
-        error_param = error_param.replace('_','')
+        error_param = error_param.replace('_',' ')
         error_param = re.sub('\d','',error_param)
         #remove extra spaces caused by earlier replacements
         error_param = error_param.replace('  ',' ')
@@ -200,6 +200,27 @@ class PromptGenerator(PromptContext):
         return 'generate a list of steps'
     def _cerate_nogen_prompt(self,**kwargs):
         pass
+
+    def generate_prompt_robot(self, error_type, obj, action, step, best_curr, program_line, *args):
+
+        generator_functions = {'inference_1': self._create_inference1_prompt, 'inference_2': self._create_inference2_prompt, 
+        'notion': self._create_notion_prompt,
+        'cause_1': self._create_cause1_prompt, 
+        'cause_2': self._create_cause2_prompt}
+
+        #format the error information for the prompt template
+        if error_type == 'empty_program':
+            error_info = self._create_emptyprogram_prompt()
+        else:
+            error_cause = self.error_parser._get_error_reason(None, error_type, args, obj, action)
+
+            error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
+        
+        all_prompt_inputs = {'step_no': step, 'error_info': error_info, 'suggestion': self.suggestion}
+        prompt_inputs = [all_prompt_inputs[i] for i in self.prompt_inputs]
+
+        return self.prompt_template.format(*prompt_inputs).replace('  ',' ')
+
 
 
     def generate_prompt(self, error_type, error_message, step, best_curr, program_line, *args):

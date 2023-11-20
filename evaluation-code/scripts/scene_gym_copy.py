@@ -14,20 +14,37 @@ Implementation Notes:
     - self.prev_graph_stack: stack containing evolving graph dictionaries for each step in plan ==> allows us to pop() to return to prev. state
 
 '''
+max_nodes = 300
+
 
 class SceneGymAllSteps():
 
     def __init__(self, scene_path, scene_num, task):
         self.reset(scene_path, scene_num, task)
+    
 
+    def check_execution(self, program_lines, precond):
 
-    def step(self, program_lines, precond):
+        helper = utils.graph_dict_helper(max_nodes=max_nodes)
+
+        try:
+            script = read_script_from_list_string(program_lines)
+        except Exception as e:
+            print('Parsing Error - check_execution in SceneGymAllSteps: ', e)
+        script, precond = modify_objects_unity2script(helper, script, precond)
+
+        executable, new_graph_dict = check_executability_saycan((script, self.initial_graph_dict))
+
+        return executable
+
+    def step(self, program_lines, precond, modify_prev=True):
 
         #NOTE: assign objects and modify internal graph only on first step
         (message, message_params, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, info, graph_helper, modified_script, ___) = check_script(program_lines, precond, self.scene_path, inp_graph_dict=copy.deepcopy(self.initial_graph_dict), modify_graph=True)
 
         #new graph dictionary is final dictionary in list of dicts
-        self.prev_graphs_stack = graph_state_list
+        if modify_prev:
+            self.prev_graphs_stack = graph_state_list
 
         #update step count
         self.steps += 1

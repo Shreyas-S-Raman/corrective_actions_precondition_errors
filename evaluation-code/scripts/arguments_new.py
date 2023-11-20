@@ -12,10 +12,16 @@ import pdb
 
 class Arguments:
 
+
+    use_robot = True
+    robot_hostname='138.16.161.22'
+
     '''default directories storing datasets'''
-    RESOURCE_DIR = os.path.relpath('../resources') #contains allowed actions, class name equivalences, train and test tasks (txt files)
-    SCENE_DIR = os.path.relpath('../example_graphs')
-    DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds')
+    RESOURCE_DIR = os.path.relpath('../resources') if not use_robot else os.path.relpath('../resources_robot') #contains allowed actions, class name equivalences, train and test tasks (txt files)
+    
+    SCENE_DIR = os.path.relpath('../example_graphs') if not use_robot else os.path.relpath('../../../spot_language/nlmap_spot/scene_graphs')
+    
+    DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds') if not use_robot else os.path.relpath('../resources_robot/dataset')
 
     '''experiment configs'''
     debug = False #original : False
@@ -24,7 +30,7 @@ class Arguments:
     fresh = True #start new experiment?
 
     #both used to generate save path for experiment results e.g. init graph, unity output, parsed string, matched string
-    expID = 196
+    expID = 1035
     exp_name = 'experiment_{}'.format(expID)
     num_workers = 40 #original: 40
     scene_num = None #take example train paths/tasks from specific VH scene [if None: uses all train paths/tasks (without scene restriction)]
@@ -42,11 +48,11 @@ class Arguments:
     '''OpenAI API configs'''
     api_max_tokens = 10
     
-    api_temperature = 0.5 #0.5 best
+    api_temperature = 0.5 #from 0.5
     api_top_p = 0.9
     api_n = 10
-    api_logprobs = 1
-    api_echo = False
+    api_logprobs = 1 #was 5 for saycan baseline, 1 for all others
+    api_echo = False #was True for SayCan baseline
     api_presence_penalty = 0.5 #0.3 best 
     api_frequency_penalty = 0.3 #original: 0.3
     #api_best_of = 1
@@ -54,7 +60,7 @@ class Arguments:
     '''Codex generation params'''
     api_max_steps = 20
     use_cutoff_threshold = True
-    api_cutoff_threshold = 0.44 #0.5 best (for score sum)
+    api_cutoff_threshold = 0.45 #0.5 best (for score sum)
     api_beta = 0.3 #original: 0.3
     api_percent_terminate = 0.5
 
@@ -67,7 +73,7 @@ class Arguments:
     use_example_subset = False
     num_available_examples = -1  #restrict the number of available example when user uses use_similar_example; -1 means no restriction imposed
     translated_condition = True
-    engine = 'davinci-instruct-beta' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex'
+    engine = 'davinci-instruct-beta' #gpt2 (0.1B) gpt2-medium (0.4B) is free | to run with GPT-3 use 'davinci' | to run with Codex use 'davinci-codex' #davinci-instruct-beta
     allow_charges = True #allow non-codex models from openai api
     finetuned = False #using finetuned LLM (after pretraining)
 
@@ -86,6 +92,7 @@ class Arguments:
         'unflipped_boolean_state': CausalErrors.UNFLIPPED_BOOL_STATE1,
         'hands_full': CausalErrors.HANDS_FULL1,
         'already_sitting': CausalErrors.ALREADY_SITTING1,
+        'already_standing':CausalErrors.ALREADY_STANDING1,
         'no_path': CausalErrors.NO_PATH1,
         'door_closed':CausalErrors.DOOR_CLOSED1,
         'proximity':CausalErrors.PROXIMITY1,
@@ -96,7 +103,8 @@ class Arguments:
         'not_holding_any':CausalErrors.NOT_HOLDING_ANY1,
         'not_facing':CausalErrors.NOT_FACING2,
         'missing_step':CausalErrors.MISSING_STEP1,
-        'invalid_room':CausalErrors.INVALID_ROOM1
+        'invalid_room':CausalErrors.INVALID_ROOM1,
+        'already_holding': CausalErrors.ALREADY_HOLDING1
     }
 
     #context prior to reprompting string: full-history, task-history, step-history
@@ -107,16 +115,18 @@ class Arguments:
     add_executable_mask = False #mask that only allows executable actions (in current state) to be chosen
     one_error = True
     resampling = False #promting only by resampling (next most viable step)
+    saycan = False
     param_tuning = False
 
     #either 'zero-shot' (for prompt template), 'few-shot' for few-shot examples, 'reasoning' for step by step reasoning
-    learned_method = 'reasoning'
-    num_examples = 10
+    learned_method = 'zero-shot'
+    num_examples = 1
     api_generation_temperature = 0.7
     api_generation_presence_penalty = 0.6
     api_generation_frequency_penalty = 0.3
     api_generation_n = 1
     default_error = 'Task failed. A correct step would be to'
+
 
 def get_args():
 
@@ -192,10 +202,16 @@ def get_args():
     os.makedirs(args.unity_parsed_save_path, exist_ok=True)
 
 
-    args.action_embedding_path = os.path.join(args.save_dir, '{}_action_embedding.pt'.format(args.sentence_model))
-    args.title_embedding_path = os.path.join(args.save_dir, '{}_train_title_embedding.pt'.format(args.sentence_model)) if not args.param_tuning else os.path.join(args.save_dir, '{}_val_title_embedding.pt'.format(args.sentence_model))
+    action_embed_file = '{}_action_embedding.pt'.format(args.sentence_model) if not args.use_robot else '{}_action_embedding_robot.pt'.format(args.sentence_model)
+    args.action_embedding_path = os.path.join(args.save_dir, action_embed_file)
 
-    args.correction_embedding_path = os.path.join(args.save_dir, '{}_correction_embedding_full_plan.pt'.format(args.sentence_model))
+
+    title_embed_file = '{}_train_title_embedding.pt'.format(args.sentence_model) if not args.use_robot else '{}_train_title_embedding_robot.pt'.format(args.sentence_model)
+    args.title_embedding_path = os.path.join(args.save_dir, title_embed_file) if not args.param_tuning else os.path.join(args.save_dir, '{}_val_title_embedding.pt'.format(args.sentence_model))
+
+
+    correction_embed_file = '{}_correction_embedding_full_plan.pt'.format(args.sentence_model) if not args.use_robot else '{}_correction_embedding_full_plan_robot.pt'.format(args.sentence_model)
+    args.correction_embedding_path = os.path.join(args.save_dir, correction_embed_file)
 
 
 
@@ -206,12 +222,12 @@ def get_args():
 
     args.allowed_action_path = os.path.join(args.RESOURCE_DIR, 'allowed_actions.json')
     args.name_equivalence_path = os.path.join(args.RESOURCE_DIR, 'class_name_equivalence.json')
-    args.scene_path_format = os.path.join(args.SCENE_DIR, 'TrimmedTestScene{}_graph.json')
+    args.scene_path_format = os.path.join(args.SCENE_DIR, 'TrimmedTestScene{}_graph.json') if not args.use_robot else os.path.join(args.SCENE_DIR, 'scene_{}.json')
 
     args.test_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'test_task_paths.txt')).strip().split('\n') if not args.param_tuning else load_txt(os.path.join(args.RESOURCE_DIR, 'val_task_paths.txt')).strip().split('\n')
     args.test_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.test_paths]))
     args.train_paths = load_txt(os.path.join(args.RESOURCE_DIR, 'train_task_paths.txt')).strip().split('\n') if not args.param_tuning else load_txt(os.path.join(args.RESOURCE_DIR, 'val_task_paths.txt')).strip().split('\n')
-    args.train_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths]))
+    args.train_paths = list(sorted([os.path.join(args.DATASET_DIR, path) for path in args.train_paths])) if not args.use_robot else list(sorted([os.path.join(args.DATASET_DIR, 'train_dataset', path) for path in args.train_paths]))
 
     args.correction_example_paths = list(sorted(os.listdir(os.path.join(args.RESOURCE_DIR, 'reprompt_examples'))))
     args.correction_example_paths = list(map(lambda x: os.path.join(args.RESOURCE_DIR, 'reprompt_examples',x), args.correction_example_paths))
@@ -274,6 +290,8 @@ def get_args():
             "stop": '\n',
             "seed": args.seed
         }
+    
+    
 
 
     return args
