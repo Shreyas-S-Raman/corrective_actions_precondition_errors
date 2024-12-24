@@ -1,5 +1,0 @@
-[walk] <salmon> (1)
-[grab] <salmon> (1)
-[open] <microwave> (1)
-[putin] <salmon> (1) <microwave> (1)
-[close] <microwave> (1)

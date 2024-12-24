@@ -1,5 +1,0 @@
-[WALK] <bedroom> (1)
-[WALK] <light> (1)
-[FIND] <light> (1)
-[TURNTO] <light> (1)
-[SWITCHOFF] <light> (1)
