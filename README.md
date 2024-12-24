@@ -6,7 +6,7 @@
 
 <sup>1</sup>Brown University, <sup>2</sup>The University of Texas Austin<br/>
 
-<img  src="images/main_figure.png" width="700">
+<img  src="images/main_figure.png" width="750">
 
 This is the official code for our [CAPE: Corrective Actions from Precondition Errors using Large Language Models](https://shreyas-s-raman.github.io/CAPE/) paper. Our explicit prompting approach enables embodied LLM agents to generate plans for for complex tasks (e.g. "make breakfast") that are more semantically correct and executable whilst minimizing re-prompting -- without requiring any fine-tuning. The code can be used with any available language models from [OpenAI API](https://openai.com/api/) and [Huggingface Transformers](https://huggingface.co/docs/transformers/index) with a common interface.
 
