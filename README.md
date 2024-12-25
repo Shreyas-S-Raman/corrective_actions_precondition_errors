@@ -2,7 +2,7 @@
 
 #### [[Project Page]](https://shreyas-s-raman.github.io/CAPE/) [[Paper]](https://ieeexplore.ieee.org/abstract/document/10611376) [[ArXiV]](https://arxiv.org/abs/2211.09935)
 
-[Shreyas S Raman](https://shreyasraman.netlify.app/)<sup>1</sup>, [Vanya Cohen](https://www.cs.utexas.edu/~ai-lab/people-view.php?PID=553)<sup>2</sup>, [Ifrah Idrees](https://scholar.google.com/citations?user=OM1hDLcAAAAJ&hl=en)<sup>1</sup>, [Eric Rosen](https://eric-rosen.github.io/)<sup>1</sup>, [Raymond J Mooney](https://www.cs.utexas.edu/~mooney/)<sup>2</sup>, [David Paulius](https://davidpaulius.github.io/)<sup>1</sup>, , [Stefanie Tellex](https://vivo.brown.edu/display/stellex)<sup>1</sup>
+[Shreyas S Raman](https://shreyasraman.netlify.app/)<sup>1</sup>, [Vanya Cohen](https://www.cs.utexas.edu/~ai-lab/people-view.php?PID=553)<sup>2</sup>, [Ifrah Idrees](https://scholar.google.com/citations?user=OM1hDLcAAAAJ&hl=en)<sup>1</sup>, [Eric Rosen](https://eric-rosen.github.io/)<sup>1</sup>, [Raymond J Mooney](https://www.cs.utexas.edu/~mooney/)<sup>2</sup>, [David Paulius](https://davidpaulius.github.io/)<sup>1</sup>, [Stefanie Tellex](https://vivo.brown.edu/display/stellex)<sup>1</sup>
 
 <sup>1</sup>Brown University, <sup>2</sup>The University of Texas Austin<br/>
 
