@@ -8,7 +8,7 @@ import re
 from sentence_transformers import util as st_utils
 import sys
 sys.path.append('../dataset_utils')
-sys.path.append('../../../spot_language/nlmap_spot')
+sys.path.append('../../../spot_sdk_interface/nlmap_spot')
 from add_preconds import *
 import numpy as np
 from vh_configs import *
@@ -16,7 +16,7 @@ from collections import OrderedDict
 import parse
 import torch
 import time
-from slang_gym_copy import SlangGymEnvironment
+from spot_gym import SlangGymEnvironment
 from prompt_generator import PromptGenerator
 from incontext_reprompter import IncontextReprompter
 import pdb
@@ -418,7 +418,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
         if isinstance(engine, str):
             response = api_retry_if_failed(default_params, max_iters=max_iters, engine=engine)
         else:
-            # pdb.set_trace()
+            
             response = engine(default_params)
 
         '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
@@ -568,10 +568,10 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
 
 
     #track errors until escape step
-    #pdb.set_trace()
+    
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        pdb.set_trace()
+        
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precondition_error = None
          
         
@@ -642,7 +642,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
 
         if 'fridge' in best_curr:
             print('ERRORING STEP!!!')
-            pdb.set_trace()
+            
         #failure check 5: precondition error on the last action taken
         obj, skill, loc, precondition_error, error_params, error_msg, skippable = scene_environment.slang_action._parse_step_to_action(best_curr, translated_action)
         
@@ -855,7 +855,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
     num_executed = 0
     executed = True
     
-    #pdb.set_trace()
+    
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
@@ -1292,7 +1292,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
         else:
             response = engine(default_params)
         
-        #pdb.set_trace()
+        
         '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
 
             iterates all responses + chooses best for next step?
@@ -1675,7 +1675,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
     #NOTE: translated_Actions should be ongoing_translated_actions
     def _generate_action(full_text, translated_actions, admissible_actions, default_params):
         print('inside generate action') 
-        #pdb.set_trace()
+        
         
         #generate next step to guide chosen admissible actions for looping
         default_params['prompt'] = full_text
@@ -1790,7 +1790,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
             #end = time.time()
             #print(end-start)
             #print(i)
-            #pdb.set_trace()
+            
             
             num_exec += 1
 
@@ -1815,7 +1815,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
                 prob_idx = np.where(np.array( response['choices'][0]['logprobs']['tokens'])==' '+str(curr_step+1))[0][-1]
             except:
                 print('ERROR IN GENERATE ACTION: CANNOT FIND STEP NUMBER TOKEN IN GENERATED TOKENS')
-                pdb.set_trace()
+                
             end_idx = -2 if action!='done' else -1
             total_logprob = sum(response['choices'][0]['logprobs']['token_logprobs'][prob_idx+2:end_idx])
             #total_prob = np.exp(total_logprob)
@@ -1823,14 +1823,14 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
                 closest_action_score = total_logprob
 
             if total_logprob > best_score:
-                #pdb.set_trace()
+                
                 if not(action == 'done' and curr_step == 0):
                     
                     best_score = total_logprob
                     best_score_idx = i
                     best_action = action
         
-        #pdb.set_trace()
+        
         #terminate early if best chosen action is in bad indexes
         if best_score_idx in bad_indexes:
             nogen_terminate = True
@@ -1899,13 +1899,13 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
 
     
     #track errors until escape step
-    #pdb.set_trace()
+    
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        #pdb.set_trace()
+        
         no_gen_error = None; done_error = None; parsing_error = None; empty_program_error = None; precondition_error = None
 
-        #pdb.set_trace()
+        
         best_curr, generated_action, translated_action, highest_prob, closest_prob, num_afforded, done_terminate, nogen_terminate, error_message = _generate_action(ongoing_text, ongoing_translated_actions, admissible_actions, default_params)
 
         

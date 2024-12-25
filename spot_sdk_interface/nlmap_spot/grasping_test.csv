@@ -1,0 +1,10 @@
+phrase,trial,ablation,grounded_verb,cosine_sim,parsed_noun,detected,mask_iou,clipseg_mask_file,binary_mask_file,color_image_file,executed,compute_time
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask44,mask44,raw_image44.jpg,,16.310280323028564
+pick up a cup,1000,test,pick up,1.0000001192092896,a cup,1,,mask45,mask45,raw_image45.jpg,,15.849860668182371
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask46,mask46,raw_image46.jpg,,15.92817497253418
+pick up a cup,1000,test,pick up,1.0000001192092896,a cup,1,,mask47,mask47,raw_image47.jpg,,17.15653347969055
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask48,mask48,raw_image48.jpg,,15.73425817489624
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask51,mask51,raw_image51.jpg,,17.290774822235107
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask54,mask54,raw_image54.jpg,,15.92578101158142
+pick up the cup,1000,test,pick up,0.9999999403953552,the cup,1,,mask56,mask56,raw_image56.jpg,1.0,17.159812211990356
+pick up the redbull can,0,test,pick up,1.0000001192092896,the redbull can,1,,mask57,mask57,raw_image57.jpg,1,17.041584253311157

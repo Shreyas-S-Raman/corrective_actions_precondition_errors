@@ -16,8 +16,6 @@ import multiprocessing as mp
 import numpy as np
 from arguments_new import get_args
 from sentence_transformers import SentenceTransformer
-# from generation_utils import *
-# from generation_utils_robot import * 
 import time
 import torch
 from tqdm import tqdm
@@ -211,7 +209,7 @@ def evaluate_all_scripts(script_paths, args, evaluated_scenes=range(1, 8)):
     return results
 
 def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args):
-    #pdb.set_trace()
+    
     query_task, query_desc = query_task_desc
     # determine saving file name
     info = generation_info[(query_task, query_desc, scene)]
@@ -241,13 +239,13 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
             
 
         elif args.resampling:
-            #pdb.set_trace()
+            
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = resampling_api_request_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         elif not args.one_error:
-            #pdb.set_trace() 
+            # 
             final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
@@ -364,15 +362,6 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
     
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
-        
-        #if query_task in set(['Browse internet','Vacuum']):
-        #    print('Task: {}'.format(query_task))
-        #    #pdb.set_trace()
-        #    pass
-        #else:
-        #    print('skip')
-        #    bar.update(1)
-        #    continue
 
         scene_path = args.scene_path_format.format(scene)
 
@@ -401,7 +390,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
             info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args)
             results.append(info)
         bar.update(1)
-    #pdb.set_trace()
+    
     return results
 
 def evaluate_pairwise_precision(generation_info, executable_only=False):
@@ -605,7 +594,7 @@ def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
 
         info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc, scene)]
             
-    # pdb.set_trace()
+    # 
     avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
     
 
@@ -693,7 +682,7 @@ def evaluate_lcs_score(generation_info, verbose=False):
 
 def construct_generation_dict(args, evaluated_scenes):
     """init info dict to save relavent infos"""
-    #pdb.set_trace()
+    
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     
@@ -704,11 +693,9 @@ def construct_generation_dict(args, evaluated_scenes):
 
         
         
-        #if task not in set(['Browse internet','Vacuum']):
-        #    continue
         
-        for scene in evaluated_scenes[4:5]:
-            #pdb.set_trace()
+        for scene in evaluated_scenes:
+            
             lines = load_txt(test_path).strip().split('\n')
             task = lines[0]
             if args.add_desc:
@@ -781,7 +768,7 @@ def construct_generation_dict(args, evaluated_scenes):
 
 def construct_generation_dict_robot(args):
     """init info dict to save relavent infos"""
-    #pdb.set_trace()
+    #
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
     
@@ -861,7 +848,7 @@ def transformers_engine(model_id, device, seed):
     def _generator(kwargs):
         input_ids = tokenizer(kwargs['prompt'], return_tensors="pt").input_ids.to(device)
         prompt_len = input_ids.shape[-1]
-        #pdb.set_trace()
+        #
         output_dict = model.generate(input_ids,
                         do_sample=True,
                         max_length=prompt_len + kwargs['max_tokens'],
@@ -1010,18 +997,15 @@ def main(args):
     else:
         generation_info = construct_generation_dict(args, evaluated_scenes)
 
-    #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
-    #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
-    
    
 
     execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, correction_example_embedding, args)
-    #pdb.set_trace()
+    
     parsed_program_paths = []
     for k in generation_info:
         parsed_program_paths.append(generation_info[k]['parsed_save_path'])
 
-    #pdb.set_trace()
+    
     # save graph and unity-modified scripts for visualization
     for r in execution_results:
         # pop init_graph_dict from execution_results and save separately for visualization, and such that it's not uploaded to wandb
@@ -1106,7 +1090,7 @@ def main(args):
     print('** overall_score: {:.2f}'.format(overall_score))
 
 
-    #pdb.set_trace() 
+    # 
     summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed','percent_executed_inloop', 'lcs_ep', 'n_step_similarity', 'pairwise_precision','most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'final_steps', 'total_steps','avg_affordance', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error', 'step_probabilities','closest_probabilities']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
@@ -1135,7 +1119,7 @@ def main(args):
             data_list.append(curr_value)
         table_data.append(data_list)
 
-    #pdb.set_trace()
+    #
     # construct table and log to wandb
     table = wandb.Table(data=table_data, columns=summary_keys)
     wandb.run.summary["execution_infos"] = table
@@ -1156,7 +1140,7 @@ def main(args):
         'normalized_lcs': normalized_lcs,
         'overall_score': overall_score
     })
-    pdb.set_trace()
+    
 
 def update_info_with_execution(generation_info, execution_results, use_robot):
 
@@ -1164,16 +1148,6 @@ def update_info_with_execution(generation_info, execution_results, use_robot):
     execution_results: list of dictionaries with keys ==> { 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
 
     '''
-
-    #'parsed_program': None if total_steps==0 else '\n'.join            (program_lines).strip(), 
-    #    'executed': False if total_steps==0 else executed, 'percent_executed_inloop': 0.0 if total_steps==0 else curr_step/total_steps,
-    #    'percent_executed': 1.0 if (executed and total_steps>0) else 0.0 ,'scene_path': scene_path,
-    #    'init_graph_dict': scene_environment.initial_graph_dict, 'modified_program': None if total_steps==0 else modified_script.to_string(),
-    #    'execution_error': check_script_error, 'precond_error': precond_error, 'parsing_error':parsing_error,
-    #    'empty_program_error':empty_program_error, 'total_steps': total_steps, 'final_steps': curr_step, 'num_replans': total_steps - curr_step, 
-    #   'avg_affordance':avg_affordance/total_steps,  'no_gen_error':no_gen_error, 'score_error':done_error,  
-    #   'all_errors': '\n'.join(all_errors), 'step_probabilities': step_probabilities, 'closest_probabilities':closest_probabilities}
-
 
     # aggregate execution_results by parsed script path
     script2results = dict()
@@ -1221,7 +1195,7 @@ if __name__ == '__main__':
     # do not enable wandb output
     os.environ["WANDB_SILENT"] = "true"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    pdb.set_trace()
+    
     args = get_args()
     wandb.config.update(args, allow_val_change=True)
 

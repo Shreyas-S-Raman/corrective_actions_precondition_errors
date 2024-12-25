@@ -14,12 +14,12 @@ class Arguments:
 
 
     use_robot = True
-    robot_hostname='138.16.161.22'
+    robot_hostname='138.16.161.22' #NOTE: replace with whichever hotname required
 
     '''default directories storing datasets'''
     RESOURCE_DIR = os.path.relpath('../resources') if not use_robot else os.path.relpath('../resources_robot') #contains allowed actions, class name equivalences, train and test tasks (txt files)
     
-    SCENE_DIR = os.path.relpath('../example_graphs') if not use_robot else os.path.relpath('../../../spot_language/nlmap_spot/scene_graphs')
+    SCENE_DIR = os.path.relpath('../example_graphs') if not use_robot else os.path.relpath('../../../spot_sdk_interface/nlmap_spot/scene_graphs')
     
     DATASET_DIR = os.path.relpath('../dataset/programs_processed_precond_nograb_morepreconds') if not use_robot else os.path.relpath('../resources_robot/dataset')
 

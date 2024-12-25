@@ -903,10 +903,10 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
 
 
     #track errors until escape step
-    #pdb.set_trace()
+    
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        #pdb.set_trace()
+        
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text, executed), default_params, executed)
@@ -1021,7 +1021,7 @@ def online_api_request_one_error(example, task_prompt, api_params, sentence_mode
         try:
             
             message, message_params, graph_dict, ____, prev_graph_dict, modified_script = scene_environment.step([parsed_program_lines[-1]], preconditions)
-            pdb.set_trace()
+            
             
         except Exception as e:
             message = "{}: {}".format(e.__class__.__name__, e)
@@ -1232,7 +1232,7 @@ def resampling_api_request(example, task_prompt, api_params, sentence_model, act
     num_executed = 0
     executed = True
     
-    #pdb.set_trace()
+    
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
@@ -1391,7 +1391,7 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
         if isinstance(engine, str):
             response = api_retry_if_failed(default_params, max_iters=max_iters, engine=engine)
         else:
-            pdb.set_trace()
+            
             response = engine(default_params)
 
         '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
@@ -1561,10 +1561,10 @@ def online_api_request_one_error_full(example, task_prompt, api_params, sentence
 
 
     #track errors until escape step
-    #pdb.set_trace()
+    
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        #pdb.set_trace()
+        
         no_gen_error = None; score_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
 
         best_curr, generated_action, translated_action, nogen_terminate, score_terminate, error_message = _generate_action( prompt_generator.change_context(ongoing_text+'Step', executed), default_params, executed)
@@ -1883,7 +1883,7 @@ def resampling_api_request_full(example, task_prompt, api_params, sentence_model
     num_executed = 0
     executed = True
     
-    #pdb.set_trace()
+    
     #track errors until escape step
 
     while curr_step < max_steps and total_steps < max_steps*2:
@@ -2412,7 +2412,7 @@ def predicted_learned_api_request_one_error_full(example, task_prompt, api_param
         else:
             response = engine(default_params)
         
-        #pdb.set_trace()
+        
         '''response format: {'choices': [{'text': '<s><s><s>.....', 'logprobs': {'token_logprobs': array([0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)}}]}
 
             iterates all responses + chooses best for next step?
@@ -2796,7 +2796,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
     #NOTE: translated_Actions should be ongoing_translated_actions
     def _generate_action(full_text, translated_actions, admissible_actions, default_params):
         print('inside generate action') 
-        #pdb.set_trace()
+        
         
         #generate next step to guide chosen admissible actions for looping
         default_params['prompt'] = full_text
@@ -2926,7 +2926,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
             #end = time.time()
             #print(end-start)
             #print(i)
-            #pdb.set_trace()
+            
             
             num_exec += 1
 
@@ -2951,7 +2951,7 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
                 prob_idx = np.where(np.array( response['choices'][0]['logprobs']['tokens'])==' '+str(curr_step+1))[0][-1]
             except:
                 print('ERROR IN GENERATE ACTION: CANNOT FIND STEP NUMBER TOKEN IN GENERATED TOKENS')
-                pdb.set_trace()
+                
             end_idx = -2 if action!='done' else -1
             total_logprob = sum(response['choices'][0]['logprobs']['token_logprobs'][prob_idx+2:end_idx])
             #total_prob = np.exp(total_logprob)
@@ -2959,14 +2959,14 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
                 closest_action_score = total_logprob
 
             if total_logprob > best_score:
-                #pdb.set_trace()
+                
                 if not(action == 'done' and curr_step == 0):
                     
                     best_score = total_logprob
                     best_score_idx = i
                     best_action = action
         
-        #pdb.set_trace()
+        
         #terminate early if best chosen action is in bad indexes
         if best_score_idx in bad_indexes:
             nogen_terminate = True
@@ -3035,13 +3035,13 @@ def saycan_api_request(example, task_prompt, api_params, sentence_model, action_
 
     
     #track errors until escape step
-    #pdb.set_trace()
+    
     
     while curr_step < max_steps and total_steps < max_steps*2:
-        #pdb.set_trace()
+        
         no_gen_error = None; done_error = None; parsing_error = None; empty_program_error = None; precond_error = None; check_script_error = None
         
-        #pdb.set_trace()
+        
         best_curr, generated_action, translated_action, highest_prob, closest_prob, num_afforded, done_terminate, nogen_terminate, error_message = _generate_action(ongoing_text, ongoing_translated_actions, admissible_actions, default_params)
 
         
@@ -3217,7 +3217,6 @@ def arg2abstract(program_lines):
         elif len(obj_names_corr) == 2:
             inst = f'[{action.upper()}] <{obj_names_corr[0]}> ({inst_nums_corr[0]}) <{obj_names_corr[1]}> ({inst_nums_corr[1]})'
         else:
-            # import pdb; pdb.set_trace()
             raise ValueError
         _program_lines.append(inst)
     return _program_lines
