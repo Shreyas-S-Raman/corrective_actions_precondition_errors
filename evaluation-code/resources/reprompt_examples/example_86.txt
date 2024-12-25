@@ -1,0 +1,18 @@
+Type: hands-full
+Failed Step: Open fridge
+
+Task: Wash dishes with dishwasher
+Step 1: Walk to kitchen
+Step 2: Find plate
+Step 3: Grab plate
+Step 4: Walk to soap
+Step 5: Find soap
+Step 6: Grab soap
+Step 7: Walk to dishwasher
+Step 8: Find dishwasher
+Step 9: Open dishwasher
+Error Object: dishwasher
+Error Type: My hands are full
+Skip: False 
+Error : I cannot open dishwasher because my hands are full. A correct step would be to 
+Step 9: Put soap on floor

@@ -46,6 +46,7 @@ def evaluate_script(kwargs):
     except Exception as e:
         info = {'parsed_program': None,
             'executed': None,
+            'percent_executed':0.0,
             'scene_path': scene_path,
             'script_path': script_path,
             'init_graph_dict': None,
@@ -67,6 +68,7 @@ def evaluate_script(kwargs):
     '''stores precondition or execution error'''
     info = {'parsed_program': '\n'.join(program_lines).strip(),
             'executed': None,
+            'percent_executed':0.0,
             'scene_path': scene_path,
             'script_path': script_path,
             'init_graph_dict': None,
@@ -123,8 +125,8 @@ def evaluate_script(kwargs):
 
         check_script() runs the program_lines on the scene graph whilst checking precond
         '''
-        (message, init_graph_dict, final_state, graph_state_list, input_graph,
-                                id_mapping, _, graph_helper, modified_script) = check_script(
+        
+        (message, __, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
                                         program_lines,
                                         precond,
                                         scene_path,
@@ -152,6 +154,7 @@ def evaluate_script(kwargs):
 
         info['init_graph_dict'] = init_graph_dict
         info['modified_program'] = modified_script.to_string()
+        info['percent_executed'] = percent_executed
     except Exception as e:
         message = "{}: {}".format(e.__class__.__name__, e)
         print('** check_script FAILED: ' + message)
@@ -164,13 +167,14 @@ def evaluate_script(kwargs):
         info['executed'] = True
         if verbose:
             print('[{}] is executable\n'.format(script_fname))
-        return info
+        
     else:
         info['executed'] = False
         info['execution_error'] = message
         if verbose:
             print('[{}] is NOT executable\n'.format(script_fname))
-        return info
+    
+    return info
     '''info dict output
     dict_keys(['parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error'])
 
@@ -308,74 +312,327 @@ def generate_program(query_task_desc, example_path, sentence_model, action_list,
         generation_info[(query_task, query_desc)]['parsed_text'] = parsed_program_text
         generation_info[(query_task, query_desc)]['parsed_program_lines'] = parsed_program_lines
         generation_info[(query_task, query_desc)]['parsibility'] = parse_info['parsibility']
+        generation_info[(query_task, query_desc)]['total_steps'] = num_steps
 
 
-def evaluate_lcs_score(generation_info, verbose=False):
+def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
+
+
+    def _get_precision(n_step_windows, n_step_gt_windows):
+
+        gen_windows = {}; gt_windows = {}
+
+        for i in range(len(n_step_windows)):
+            window = ' '.join(n_step_windows[i])
+
+            if window not in gen_windows:
+                gen_windows[window] = 0
+            gen_windows[window] += 1
+        
+        for i in range(len(n_step_gt_windows)):
+            for j in range(len(n_step_gt_windows[i])):
+                
+                gt_window = ' '.join(n_step_gt_windows[i][j])
+
+                if gt_window not in gt_windows:
+                    gt_windows[gt_window] = 0
+                gt_windows[gt_window] += 1
+        
+
+        precision = 0.0; precision_denom = np.sum(len(gen_windows.values()))
+
+        for window in gen_windows.keys():
+            precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
+        
+        return precision/precision_denom if precision_denom > 0.0 else 0.0
+
+    def _get_sliding_windows(array, window_size):
+        start = 0
+
+        sub_windows = (start + np.expand_dims(np.arange(window_size),0) + np.expand_dims(np.arange(len(array)-window_size+1), 0).T)
+        
+        return array[sub_windows]
+
+
+
+    #evaluate the n-step similarity for each task
+    task_nstep_similarity_sum = dict()
+
+    for (task, desc), info in generation_info.items():
+
+        task_similarity = 0.0
+
+        for scene in range(len(info['executed'])):
+
+            try:
+                program_lines = info['parsed_program_lines']
+            except KeyError as e:
+                program_lines = load_txt(info['parsed_save_path']).split('\n')
+            
+            if executable_only and False in info['executed']:
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
+            
+
+            #if program is empty assign 0.0 n-step similarity
+            if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+                precision_sum = 0.0
+        
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+                gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+                
+                mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+                brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
+
+                precision_sum = 0.0
+
+                for i in range(1, n+1):
+                    
+                    # shape: (num_windows , n)
+                    n_step_windows = _get_sliding_windows(np.array(program_lines), i)
+                    
+                    # shape: (num_examples, num_windows, n)
+                    n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
+
+
+                    precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
+                
+
+                precision_sum = (precision_sum/n)*brevity_pen
+            
+
+            task_similarity += precision_sum
+
+        assert (task, desc) not in task_nstep_similarity_sum 
+
+        task_nstep_similarity_sum[(task, desc)] = task_similarity/len(info['executed'])
+            
+        info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc)]
+            
+
+    avg_nstep_similarty_sum = np.sum(list(task_nstep_similarity_sum.values()))/len(task_nstep_similarity_sum.keys())
+    
+
+    return avg_nstep_similarty_sum
+
+
+def evaluate_pairwise_precision(generation_info, executable_only=False):
+
+
+    def _generate_line_pair_counts(lines, gt=False):
+        
+        if gt is False:
+            output_counts = {}
+
+            for i in range(len(lines)):
+                for j in range(i+1, len(lines)):
+
+                    pair = ' '.join([lines[i], lines[j]])
+
+                    if pair not in output_counts:
+                        output_counts[pair] = 0
+                    
+                    output_counts[pair] += 1
+        
+        else:
+
+            output_counts = []
+
+            for k in range(len(lines)):
+
+                pair_counts = {}
+
+                for i in range(len(lines[k])):
+                    for j in range(i+1, len(lines[k])):
+
+                        pair = ' '.join([lines[k][i], lines[k][j]])
+
+                        if pair not in output_counts:
+                            pair_counts[pair] = 0
+                        
+                        pair_counts[pair] += 1
+                
+                output_counts.append(pair_counts)
+
+        return output_counts
+    
+    def _compute_precision(program_lines, gt_program_lines):
+
+        precision = 0.0
+
+        for gt_count_dict in gt_program_lines:
+
+
+            for pair in program_lines.keys():
+
+                precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
+        
+
+        return precision/len(list(program_lines.keys())) if len(list(program_lines.keys())) > 0.0 else 0.0
+                
+
+
+
+
+
+    #evaluate the n-step similarity for each task
+    task_pairwise_precision = dict()
+
+    for (task, desc), info in generation_info.items():
+
+        task_precision = 0.0
+
+        for scene in range(len(info['executed'])):
+
+            try:
+                program_lines = info['parsed_program_lines']
+            except KeyError as e:
+                program_lines = load_txt(info['parsed_save_path']).split('\n')
+            
+            if executable_only and False in info['executed']:
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
+            
+
+            #if program is empty assign 0.0 n-step similarity
+            if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+                precision_sum = 0.0
+        
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+                gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+
+
+                mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+                brevity_pen = min(1, np.exp( (1 - len(program_lines))/mean_gt_length ) )
+
+
+                program_lines = _generate_line_pair_counts(program_lines, gt=False)
+                gt_program_lines = _generate_line_pair_counts(gt_program_lines, gt = True)
+
+
+                precision_sum = _compute_precision(program_lines, gt_program_lines)
+                precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
+
+            task_precision += precision_sum
+
+        assert (task, desc) not in task_pairwise_precision
+            
+
+        task_pairwise_precision[(task, desc)] = precision_sum/len(info['executed'])
+            
+
+        info['pairwise_precision'] = task_pairwise_precision[(task, desc)]
+            
+
+    avg_pairwise_precision = np.sum(list(task_pairwise_precision.values()))/len(task_pairwise_precision.keys())
+    
+
+    return avg_pairwise_precision
+
+        
+
+
+def evaluate_lcs_score(generation_info, verbose=False, executable_only=False):
     # evaluate lcs score for each task
     task_lcs = dict()
     task_sketch_lcs = dict()
     for (task, desc), info in generation_info.items():
+
         try:
             program_lines = info['parsed_program_lines']
         except KeyError as e:
             program_lines = load_txt(info['parsed_save_path']).split('\n')
-        # init default values
-        most_similar_gt_program_text = info['gt_program_text'][0]
-        most_similar_gt_sketch_text = ''
-        task_sketch_lcs[(task, desc)] = -1
-        # if the program is empty, simply assign lcs of 0
-        if len(program_lines) == 0 or (len(program_lines) == 1 and len(program_lines[0]) == 0):
-            task_lcs[(task, desc)] = 0
-            if verbose:
-                print('*' * 10 + f' {task} ' + '*' * 10)
-                print('*' * 5 + f' program length is 0 ' + '*' * 5)
-                print('*' * 40)
-                print()
-        else:
-            program_lines = preprocess_program_lines_for_lcs(program_lines)
-            # iterate through all gt programs and use the highest lcs obtained
-            curr_lcs = []
-            for gt_program_lines in info['gt_program_lines']:
-                gt_program_lines = preprocess_program_lines_for_lcs(gt_program_lines)
-                lcs = LCS(program_lines, gt_program_lines)
-                lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_program_lines))))
-                curr_lcs.append(lcs_score)
-            assert (task, desc) not in task_lcs
-            most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-            task_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
-            most_similar_gt_program_text = info['gt_program_text'][most_similar_gt_idx]
-            if verbose:
-                print('*' * 10 + f' {task} ' + '*' * 10)
-                print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
-                print('\n* '.join(program_lines))
-                print('-' * 40)
-                print('\n* '.join(info['gt_program_lines'][np.argsort(curr_lcs)[-1]]))
-                print('*' * 40)
-                print()
-            # iterate through all gt sketches and use the highest lcs obtained
-            if 'gt_sketch_lines' in info:
+        
+        avg_task_lcs = 0.0
+        avg_task_sketch_lcs = 0.0
+
+        for scene in range(len(info['executed'])):
+            #if executable_only and the script is not executable, then get the portion of program_lines that are executable
+            if executable_only and False in info['executed']:
+                
+                stop_idx = int(info['percent_executed'][scene]*len(program_lines))
+                program_lines = program_lines[:stop_idx]
+                
+
+
+            # init default values
+            most_similar_gt_program_text = info['gt_program_text'][0]
+            most_similar_gt_sketch_text = ''
+            task_sketch_lcs[(task, desc)] = -1
+            # if the program is empty, simply assign lcs of 0
+            if len(program_lines) == 0 or (len(program_lines) == 1 and len(program_lines[0]) == 0):
+                
+                if verbose:
+                    print('*' * 10 + f' {task} ' + '*' * 10)
+                    print('*' * 5 + f' program length is 0 ' + '*' * 5)
+                    print('*' * 40)
+                    print()
+                continue
+
+            else:
+                program_lines = preprocess_program_lines_for_lcs(program_lines)
+                # iterate through all gt programs and use the highest lcs obtained
                 curr_lcs = []
-                for gt_sketch_lines in info['gt_sketch_lines']:
-                    gt_sketch_lines = preprocess_program_lines_for_lcs(gt_sketch_lines)
-                    lcs = LCS(program_lines, gt_sketch_lines)
-                    lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_sketch_lines))))
+                
+
+                for gt_program_lines in info['gt_program_lines']:
+                    gt_program_lines = preprocess_program_lines_for_lcs(gt_program_lines)
+                    lcs = LCS(program_lines, gt_program_lines)
+                    lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_program_lines))))
                     curr_lcs.append(lcs_score)
+
+                assert (task, desc) not in task_lcs
                 most_similar_gt_idx = np.argsort(curr_lcs)[-1]
-                task_sketch_lcs[(task, desc)] = curr_lcs[most_similar_gt_idx]
-                most_similar_gt_sketch_text = info['gt_sketch_text'][most_similar_gt_idx]
+                
+                avg_task_lcs += curr_lcs[most_similar_gt_idx]
+                most_similar_gt_program_text = info['gt_program_text'][most_similar_gt_idx]
                 if verbose:
                     print('*' * 10 + f' {task} ' + '*' * 10)
                     print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
                     print('\n* '.join(program_lines))
                     print('-' * 40)
-                    print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
+                    print('\n* '.join(info['gt_program_lines'][np.argsort(curr_lcs)[-1]]))
                     print('*' * 40)
                     print()
-        info['lcs'] = task_lcs[(task, desc)]
-        info['sketch_lcs'] = task_sketch_lcs[(task, desc)]
+                # iterate through all gt sketches and use the highest lcs obtained
+                if 'gt_sketch_lines' in info:
+                    curr_lcs = []
+                    for gt_sketch_lines in info['gt_sketch_lines']:
+                        gt_sketch_lines = preprocess_program_lines_for_lcs(gt_sketch_lines)
+                        lcs = LCS(program_lines, gt_sketch_lines)
+                        lcs_score = len(lcs) / (float(max(len(program_lines), len(gt_sketch_lines))))
+                        curr_lcs.append(lcs_score)
+                    most_similar_gt_idx = np.argsort(curr_lcs)[-1]
+                    avg_task_sketch_lcs += curr_lcs[most_similar_gt_idx]
+                    most_similar_gt_sketch_text = info['gt_sketch_text'][most_similar_gt_idx]
+                    if verbose:
+                        print('*' * 10 + f' {task} ' + '*' * 10)
+                        print('*' * 5 + f' {curr_lcs} ' + '*' * 5)
+                        print('\n* '.join(program_lines))
+                        print('-' * 40)
+                        print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
+                        print('*' * 40)
+                        print()
+        
+
+        task_lcs[(task, desc)] = avg_task_lcs/len(info['executed'])
+        task_sketch_lcs[(task, desc)] = avg_task_sketch_lcs/len(info['executed'])
+        
+
+        if not executable_only:
+            info['lcs'] = task_lcs[(task, desc)]
+            info['sketch_lcs'] = task_sketch_lcs[(task, desc)]
+        else:
+            info['lcs_ep'] = task_lcs[(task, desc)]
+            info['sketch_lcs_ep'] = task_sketch_lcs[(task, desc)]
+
         info['most_similar_gt_program_text'] = most_similar_gt_program_text
         info['most_similar_gt_sketch_text'] = most_similar_gt_sketch_text
-    avg_lcs = np.mean(list(task_lcs.values()))
+    avg_lcs =  np.sum(list(task_lcs.values()))/len(task_lcs.values())
     sketch_lcs_sum, count = 0, 0
     for v in task_sketch_lcs.values():
         if v != -1:
@@ -392,6 +649,8 @@ def construct_generation_dict(args):
     """init info dict to save relavent infos"""
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
+    
+    
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
         lines = load_txt(test_path).strip().split('\n')
@@ -400,6 +659,7 @@ def construct_generation_dict(args):
             desc = lines[1]
         else:
             desc = ''
+        
         program_lines = lines[4:]
         program_text = '\n'.join(program_lines).strip()
         # init the dict for each program
@@ -434,14 +694,28 @@ def construct_generation_dict(args):
                 generation_info[(task, desc)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
-    pdb.set_trace()
+     
     return generation_info
 
 def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
     bar = tqdm(total=len(generation_info))
-    for query_task, query_desc in generation_info:
+
+    for i, (query_task, query_desc) in enumerate(generation_info):
         if args.use_similar_example:
-            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device)
+            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device, param_tuning = args.param_tuning)
+            
+            if args.param_tuning:
+                
+                for idx in example_path_idx:
+
+                    example_task = load_txt(args.example_paths[idx]).strip().split('\n')[0]
+                    if example_task != query_task:
+                        example_path_idx = idx
+                        break
+
+            else:
+                example_path_idx = example_path_idx[0]
+            
             example_path = args.example_paths[example_path_idx]
         else:
             example_path = args.example_path
@@ -451,6 +725,7 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
             generate_program((query_task, query_desc), example_path, sentence_model, action_list, action_list_embedding, generation_info, args)
         bar.update(1)
+    
 
 def transformers_engine(model_id, device, seed):
     from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
@@ -525,7 +800,7 @@ def main(args):
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')
-        if not 'codex' in args.engine:
+        if not 'codex' and not 'code' in args.engine:
             assert args.allow_charges
     start = time.time()
     if args.skip_load and not args.use_similar_example:
@@ -559,13 +834,14 @@ def main(args):
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))
     elif args.use_similar_example:
         print('creating title embedding for "use_similar_example"... ', end='')
-        titles = []
+        titles = set([])
         for example_path in args.example_paths:
             example = load_txt(example_path)
             program_lines = example.strip().split('\n')
             title = program_lines[0]
-            titles.append(title)
-        title_embedding = sentence_model.encode(titles, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
+            titles.add(title)
+        
+        title_embedding = sentence_model.encode(list(titles), batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
         # cache to device
         torch.save(title_embedding.detach().cpu(), args.title_embedding_path)
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))
@@ -591,40 +867,65 @@ def main(args):
             save_dict(os.path.join(args.init_graph_save_path, 'scene{}-{}.json'.format(scene_num, title)), init_graph_dict)
             # save modified scripts for visualization
             save_txt(os.path.join(args.unity_parsed_save_path, 'scene{}-{}.txt'.format(scene_num, title)), r['modified_program'])
+
+    # log generation info
+    generation_info = update_info_with_execution(generation_info, execution_results)
+    
     # log to wandb ========================================================
     # log executability
-    percent_executed = sum([r['executed'] for r in execution_results]) / len(execution_results)
-    wandb.run.summary["percent_executed"] = percent_executed
-    print('** percent_executed: {:.2f}'.format(percent_executed))
-    # evaluate lcs score
+    executability = sum([r['executed'] for r in execution_results]) / len(execution_results)
+    wandb.run.summary["executability"] = executability
+    print('** executability: {:.4f}'.format(executability))
+    
+    avg_percent_executed = sum([r['percent_executed'] for r in execution_results]) / len(execution_results)
+    wandb.run.summary["avg_percent_executed"] = avg_percent_executed
+    print('** average percent executed (final plan): {:.2f}'.format(avg_percent_executed))
+
+    # evaluate lcs score for full script
     avg_lcs, avg_sketch_lcs = evaluate_lcs_score(generation_info, verbose=False)
     wandb.run.summary["avg_lcs"] = avg_lcs
-    print('** avg_lcs: {:.2f}'.format(avg_lcs))
+    print('** avg_lcs: {:.4f}'.format(avg_lcs))
     wandb.run.summary["avg_sketch_lcs"] = avg_sketch_lcs
-    print('** avg_sketch_lcs: {:.2f}'.format(avg_sketch_lcs))
+    print('** avg_sketch_lcs: {:.4f}'.format(avg_sketch_lcs))
+
+    # evaluate lcs score for executable script
+    avg_lcs_ep, ___ = evaluate_lcs_score(generation_info, verbose=False, executable_only=True)
+    wandb.run.summary["avg_lcs_ep"] = avg_lcs_ep
+    print('** avg_lcs_ep: {:.4f}'.format(avg_lcs_ep))
+    
+    #evaluate the n-step similarity score (with clipping)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3, executable_only=False)
+
+    wandb.run.summary["n_step_similarity"] = n_step_similarity
+    print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))
+
+    #evaluate the pairwise precision score (with clipping)
+    pairwise_precision = evaluate_pairwise_precision(generation_info, executable_only=False)
+
+    wandb.run.summary["pairwise_precision"] = pairwise_precision
+    print('** avg pairwise precision: {:.2f}'.format(pairwise_precision))
+
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
-    wandb.run.summary['avg_parsed_length'] = avg_parsed_length
-    print('** avg_parsed_length: {:.2f}'.format(avg_parsed_length))
+    wandb.run.summary['avg_no_steps'] = avg_parsed_length
+    print('** avg_no_steps: {:.4f}'.format(avg_parsed_length))
     # get average parsibility
     avg_parsibility = np.mean([info['parsibility'] for info in generation_info.values()])
     wandb.run.summary['avg_parsibility'] = avg_parsibility
-    print('** avg_parsibility: {:.2f}'.format(avg_parsibility))
+    print('** avg_parsibility: {:.4f}'.format(avg_parsibility))
     # get normalized overall score for hparam sweep ranking
-    normalized_exec = normalize(percent_executed, min_v=.09, max_v=.88)
+    normalized_exec = normalize(executability, min_v=.09, max_v=.88)
     normalized_lcs = normalize(avg_lcs, min_v=.10, max_v=.24)
     overall_score = normalized_exec + normalized_lcs
     wandb.run.summary['normalized_exec'] = normalized_exec
     wandb.run.summary['normalized_lcs'] = normalized_lcs
     wandb.run.summary['overall_score'] = overall_score
-    print('** normalized_exec: {:.2f}'.format(normalized_exec))
-    print('** normalized_lcs: {:.2f}'.format(normalized_lcs))
-    print('** overall_score: {:.2f}'.format(overall_score))
+    print('** normalized_exec: {:.4f}'.format(normalized_exec))
+    print('** normalized_lcs: {:.4f}'.format(normalized_lcs))
+    print('** overall_score: {:.4f}'.format(overall_score))
 
-    # log generation info
-    generation_info = update_info_with_execution(generation_info, execution_results)
 
-    summary_keys = ['task', 'description', 'full_raw_text', 'matched_text', 'example_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'parsed_text', 'precond_error', 'sketch_lcs', 'most_similar_gt_sketch_text']
+    summary_keys = ['task', 'description', 'full_raw_text', 'matched_text', 'example_text', 'parsibility', 'executed', 'percent_executed', 'lcs', 'lcs_ep', 'n_step_similarity','pairwise_precision', 'most_similar_gt_program_text', 'execution_error', 'total_steps', 'parsed_text', 'precond_error', 'sketch_lcs', 'most_similar_gt_sketch_text']
     table_data = []
     for (task, desc), info in generation_info.items():
         data_list = [task, desc]
@@ -653,10 +954,14 @@ def main(args):
 
     wandb.log({
         'avg_lcs': avg_lcs,
+        'avg_lcs_ep': avg_lcs_ep,
         'avg_sketch_lcs': avg_sketch_lcs,
-        'avg_parsed_length': avg_parsed_length,
+        'avg_no_steps': avg_parsed_length,
         'avg_parsibility': avg_parsibility,
-        'percent_executed': percent_executed,
+        'avg_executability': executability,
+        'avg_percent_executed': avg_percent_executed,
+        'avg_n_step_similarity': n_step_similarity,
+        'avg_pairwise_precision': pairwise_precision,
         'execution_infos': table,
         'normalized_exec': normalized_exec,
         'normalized_lcs': normalized_lcs,
@@ -671,15 +976,14 @@ def update_info_with_execution(generation_info, execution_results):
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'],
-                                                            execution_error=r['execution_error'],
-                                                            precond_error=r['precond_error'])
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], execution_error=r['execution_error'], precond_error=r['precond_error'])
 
     for (task, desc), info in generation_info.items():
         for script_path, script_results in script2results.items():
             if info['parsed_save_path'] == script_path:
                 info['scene_nums'] = [scene_num for scene_num in script_results.keys()]
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
+                info['percent_executed'] = [scene_result['percent_executed'] for scene_result in script_results.values()]
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]
                 info['precond_error'] = [scene_result['precond_error'] for scene_result in script_results.values()]
 
@@ -693,7 +997,7 @@ if __name__ == '__main__':
     # do not enable wandb output
     os.environ["WANDB_SILENT"] = "true"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    pdb.set_trace()
+    
     args = get_args()
     wandb.config.update(args, allow_val_change=True)
     main(args)

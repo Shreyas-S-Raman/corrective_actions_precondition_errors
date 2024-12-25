@@ -4,6 +4,7 @@ import augmentation_utils
 from termcolor import colored
 import ipdb
 import random
+random.seed(123)
 actions_2_object = ['PUTBACK', 'POUR', 'THROW', 'COVER', 'WRAP', 'SOAK', 'SPREAD']
 
 

@@ -1,0 +1,15 @@
+Type: internally-contained
+Failed Step: Pull chair
+
+Task: Write story
+Step 1: Walk to home office
+Step 2: Walk to desk
+Step 3: Find computer
+Step 4: Switch on computer
+Step 5: Find chair
+Step 6: Pull chair
+Error Object: chair
+Error Type: object inside something else
+Skip: False
+Error: the chair is inside another closed thing. A correct step would be to
+Step 6: Pull out chair

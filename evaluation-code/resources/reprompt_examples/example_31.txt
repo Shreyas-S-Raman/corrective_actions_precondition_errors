@@ -1,0 +1,22 @@
+Type: agent-proximity
+Failed Step: Close dresser
+
+Task: Get ready to leave
+Step 1: Walk to bedroom
+Step 2: Walk to dresser
+Step 3: Find dresser
+Step 4: Open dresser
+Step 5: Find clothes dress
+Step 6: Grab clothes dress
+Step 7: Put on clothes dress
+Step 8: Find shoes
+Step 9: Grab shoes
+Step 10: Put on shoes
+Step 11: Find purse
+Step 12: Grab purse
+Step 13: Close dresser
+Error Object: dresser
+Error Type: not near object
+Skip: False
+Error: I am not near the dresser. A correct step would be to
+Step 13: Walk to dresser

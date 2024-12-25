@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Bring dirty plate to sink
+
+Task: Bring dirty plate to sink
+Error Object: None
+Error Type: no generated output
+Skip: False
+Error: How can I bring dirty plate to the sink? A correct step would be to
+Step 1: Walk to sink

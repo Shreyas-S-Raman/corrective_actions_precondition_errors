@@ -1,0 +1,13 @@
+Type: not-facing-object
+Failed Step: Look at man
+
+Task: Greet guests
+Step 1: Walk to home office
+Step 2: Walk to man
+Step 3: Find man
+Step 4: Look at man
+Error Object: man
+Error Type: not facing object
+Skip: False
+Error: I need to turn to face the man. A correct step would be to
+Step 4: Turn to man

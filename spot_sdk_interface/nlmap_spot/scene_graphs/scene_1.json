@@ -1,0 +1,48 @@
+{"room_state":[
+	{"name": "kitchen", "neighbour_doors":{"home_office":1,"dining_room":1}},
+	{"name": "home_office", "neighbour_doors":{"kitchen":1}},
+	{"name": "dining_room", "neighbour_doors":{"kitchen":1}},
+	{"name": "origin", "neighbour_doors":{"kitchen":1}}
+],
+"object_states":[
+	{"name":"origin", "id":0, "container":false, "holdable": false, "openable": false, "location": "origin", "coordinates": null},
+
+	{"name":"door", "id":1, "open":true, "location":"door", "coordinates":null, "container": false, "holdable": false, "openable":true},
+	{"name": "apple", "id": 2, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held": false, "contained_in": 10},
+	{"name": "banana", "id": 3, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held": false, "contained_in": 10},
+	{"name": "water_bottle", "id": 4, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held": false, "contained_in": 10},
+	{"name": "frozen_vegetables", "id": 5, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held": false, "contained_in": 10},
+	{"name": "plate", "id": 6, "container": true, "holdable": false, "openable": false, "location": "dining_table", "coordinates":null, "contains":[], "contained_in": 10},
+	{"name": "spatula", "id": 7, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "cup", "id": 8, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "chips", "id": 9, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "dining_table", "id": 10, "container": true, "holdable": false, "openable": false, "location": "dining_room", "coordinates":null, "contains":[2,3,4,5,6,7,8,9,28,29,30,31,32,33]},
+	{"name": "kitchen", "id":11, "room":true, "container":false, "holdable":false, "openable":false, "location": "kitchen", "coordinates":null},
+	{"name": "home_office", "id":12, "room":true, "container": false, "holdable":false, "openable":false, "location":"home_office", "coordinates":null},
+	{"name": "dining_room", "id":13, "room":true, "container": false, "holdable":false, "openable":false, "location":"dining_room", "coordinates":null},
+	{"name": "fridge", "id":14, "container": true, "holdable":false, "openable":true, "location":"kitchen", "coordinates":null, "open":false, "contains":[]},
+	{"name": "faucet", "id":15, "container": true, "holdable":false, "openable":false, "location":"kitchen", "coordinates":null, "contains":[]},
+	{"name": "redbull", "id": 33, "container": false, "holdable":true, "openable":false, "location":"dining_table", "coordinates":null, "held": false, "contained_in":10},
+
+	{"name": "work_table", "id":16, "container": true, "holdable":false, "openable":false, "location":"home_office", "coordinates":null, "contains":[19,20,21,22,23,24,25,26]},
+	{"name": "coffee_machine", "id": 17, "container": true, "holdable": false, "openable": false, "location": "home_office", "coordinates":null, "contains": []},
+	{"name": "potted_plant", "id": 18, "container": true, "holdable": false, "openable": false, "location": "work_table", "coordinates":null, "contained_in": 16, "contains":[]},
+	{"name": "shoes", "id": 19, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "hat", "id": 20, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "tennis_ball", "id": 21, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "wallet", "id": 22, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "stapler", "id": 23, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "medicine", "id": 24, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "coffee_mug", "id": 25, "container": false, "holdable": true, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+	{"name": "folders", "id": 26, "container": false, "holdable": false, "openable": false, "location": "work_table", "coordinates":null, "held":false, "contained_in": 16},
+
+	{"name": "cabinet", "id":27, "container": true, "holdable":false, "openable":true, "location":"dining_room", "coordinates":null, "open":false, "contains":[]},
+	{"name": "pasta", "id": 28, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "instant_noodles", "id": 29, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "bread_loaf", "id": 30, "container": false, "holdable": true, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "forks", "id": 31, "container": false, "holdable": false, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10},
+	{"name": "spoons", "id": 32, "container": false, "holdable": false, "openable": false, "location": "dining_table", "coordinates":null, "held":false, "contained_in": 10}
+],
+
+"spot_state":{"standing": true, "holding": false, "holding_object": null, "location": "origin", "misaligned":false}
+}

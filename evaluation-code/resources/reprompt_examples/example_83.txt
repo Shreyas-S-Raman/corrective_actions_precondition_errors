@@ -1,0 +1,11 @@
+Type: door-closed
+Failed Step: Walk to bedroom
+
+Task: Wake kids up
+Step 1: Put newspaper down
+Step 2: Walk to bedroom 
+Error Object: door to bedroom
+Error Type: door between two rooms is closed
+Skip: False 
+Error: The door to bedroom is closed. A correct step would be to 
+Step 2: Open door

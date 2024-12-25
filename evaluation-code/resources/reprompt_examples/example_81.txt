@@ -1,0 +1,15 @@
+Type: agent-proximity
+Failed Step: Put groceries in fridge
+
+Task: Put groceries in Fridge
+Step 1:  Walk to kitchen
+Step 2: Walk to fridge
+Step 3: Find fridge
+Step 4: Open fridge 
+Step 5: Find groceries
+Step 6: Put groceries in fridge
+Error Object: groceries
+Error Type: I am not holding the object
+Skip: False
+Error: I am not holding the groceries. A correct step would be to 
+Step 6: Grab groceries

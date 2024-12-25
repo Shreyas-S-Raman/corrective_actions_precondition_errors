@@ -1,0 +1,18 @@
+Type: hands-full
+Failed Step: Grab wiper 
+
+Task: Clean bathroom window
+Step 1:  Walk to bathroom
+Step 2: Walk to cleaning solution
+Step 3: Find cleaning solution
+Step 4: Grab cleaning solution
+Step 5: Find rag
+Step 6: Grab rag
+Step 7: Pour cleaning solution into rag
+Step 8: Find wiper
+Step 9: Grab wiper 
+Error Object: wiper
+Error Type: I am already holding cleaning solution and rag. My hands are full
+Skip: False
+Error: I cannot grab wiper because my hands are full. A correct step would be to 
+Step 9: Put back cleaning solution

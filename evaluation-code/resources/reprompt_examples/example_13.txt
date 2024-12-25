@@ -1,0 +1,14 @@
+Type: not-holding
+Failed Step: Put soap on dishwasher
+
+Task: Load dishwasher
+Step 1: Walk to dishwasher
+Step 2: Open dishwasher
+Step 3: Find dishwasher
+Step 4: Find soap
+Step 5: Put soap on dishwasher
+Error Object: soap
+Error Type: not holding object
+Skip: False
+Error: I am not holding soap. A correct step would be to
+Step 5: Grab soap

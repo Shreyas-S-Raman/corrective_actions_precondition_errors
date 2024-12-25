@@ -1,0 +1,5 @@
+[FIND] <television> (1)
+[SWITCHON] <television> (1)
+[FIND] <cd_player> (1)
+[SWITCHON] <cd_player> (1)
+[SWITCHOFF] <cd_player> (1)

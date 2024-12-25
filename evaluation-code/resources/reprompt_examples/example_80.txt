@@ -1,0 +1,15 @@
+Type: door-closed
+Failed Step: Find window
+
+Task: Clean bathroom window
+Step 1:  Walk to cleaning solution
+Step 2:  Find cleaning solution
+Step 3: Grab cleaning solution
+Step 4: Find wiper
+Step 5: Grab wiper
+Step 6: Find window
+Error Object: bathroom door
+Error Type : The door is closed
+Skip: False
+Error: the bathroom door is closed. A correct step would be to 
+Step 6: Open bathroom door

@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Add meat to freezer
+
+Task: Added meat to freezer
+Error Object: none
+Error Type: no generated output
+Skip: False
+Error: How can I add meat to freezer? A correct step would be to
+Step 1: Walk to freezer

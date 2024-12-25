@@ -16,7 +16,6 @@ import multiprocessing as mp
 import numpy as np
 from arguments_new import get_args
 from sentence_transformers import SentenceTransformer
-from generation_utils import *
 import time
 import torch
 from tqdm import tqdm
@@ -122,8 +121,7 @@ def evaluate_script(kwargs):
 
         check_script() runs the program_lines on the scene graph whilst checking precond
         '''
-        (message, init_graph_dict, final_state, graph_state_list, input_graph,
-                                id_mapping, _, graph_helper, modified_script) = check_script(
+        (message, __, init_graph_dict, final_state, graph_state_list, input_graph, id_mapping, _, graph_helper, modified_script, percent_executed) = check_script(
                                         program_lines,
                                         precond,
                                         scene_path,
@@ -210,14 +208,19 @@ def evaluate_all_scripts(script_paths, args, evaluated_scenes=range(1, 8)):
 
     return results
 
-def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args):
-    #pdb.set_trace()
+def generate_program(query_task_desc, example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args):
+    
     query_task, query_desc = query_task_desc
     # determine saving file name
     info = generation_info[(query_task, query_desc, scene)]
     # generate from openai api ============================================
     # format prompt and query openai api
-    example_str = construct_example(example_path, add_desc=args.add_desc) if not args.finetuned else ''
+    
+    if args.use_robot:
+        example_str = construct_example_robot(example_path, add_desc=args.add_desc)
+    else:
+        example_str = construct_example(example_path, add_desc=args.add_desc)
+
     if args.verbose:
         print('*************** EXAMPLE ***************\n{}'.format(example_str.strip()))
     if args.add_desc:
@@ -227,20 +230,47 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         task_prompt_formatted = 'Task: {}'.format(query_task)
 
     if args.iterative and not args.raw_lm:
+        
+        
 
-        if args.resampling:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = resampling_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, max_steps=args.api_max_steps,
+        if args.saycan:
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = saycan_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps= 15, verbose=args.debug and args.verbose, cutoff_threshold= args.api_cutoff_threshold, beta=args.api_beta, percent_terminate= args.api_percent_terminate, engine=args.engine, translated_condition=args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
+
+            
+
+        elif args.resampling:
+            
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = resampling_api_request_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
             beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
 
         elif not args.one_error:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, max_steps=args.api_max_steps,
+            # 
+            final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person, 'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
             verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
-            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
+            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask = args.add_executable_mask)
         else:
-            final_raw_text, matched_program_lines, full_raw_text, full_matched_program_lines, task_info = online_api_request_one_error(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'fixed': args.fixed_prompt, 'question':args.question_prompt}, max_iters=1000, max_steps=args.api_max_steps,
-            verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
-            beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step)
+
+            if args.learned_method == 'zero-shot':
+            
+                final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = online_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, args.device, action_list, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+                verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+                beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+
+            elif args.learned_method == 'few-shot':
+
+                final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = incontext_learned_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params, sentence_model, action_list_embedding, correction_example_embedding, args.device, action_list, args.correction_example_paths, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context}, max_iters=1000, max_steps=args.api_max_steps,
+                verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+                beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+
+
+            elif args.learned_method == 'reasoning':
+                
+                final_raw_text, matched_program_lines, full_raw_text, full_generated_lines, full_matched_program_lines, task_info = predicted_learned_api_request_one_error_full(example_str, task_prompt_formatted, args.api_params,args.api_generation_params, sentence_model, action_list_embedding, correction_example_embedding, args.device, action_list, args.correction_example_paths, args.raw_lm, scene_path, scene, {'prompt_template': args.prompt_template, 'custom_cause':args.custom_cause, 'error_information':args.error_information, 'suggestion_no':args.suggestion_no, 'third_person':args.third_person,'chosen_causal_reprompts':args.chosen_causal_reprompts, 'chosen_context': args.chosen_context,'num_examples':args.num_examples, 'default_error':args.default_error}, max_iters=1000, max_steps=args.api_max_steps,
+                verbose=args.debug and args.verbose, cutoff_threshold=args.api_cutoff_threshold,
+                beta=args.api_beta, percent_terminate=args.api_percent_terminate, engine=args.engine, translated_condition = args.translated_condition, step_by_step = args.step_by_step, add_executable_mask=args.add_executable_mask)
+            else:
+                raise NotImplementedError()
 
         task_info['script_path'] = info['parsed_save_path']
 
@@ -270,6 +300,7 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         '''
         matched_program_text = '\n'.join(matched_program_lines).strip()
         full_matched_program_text = '\n'.join(full_matched_program_lines).strip()
+        full_generated_text = '\n'.join(full_generated_lines).strip()
 
         if args.verbose:
             print('*************** MATCHED TEXT ***************\n{}'.format(matched_program_text))
@@ -277,10 +308,17 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         '''matched_program_text: join together converted actions to single string (each step on different line)'''
         save_txt(info['matched_save_path'], matched_program_text)
         save_txt(info['full_matched_save_path'], full_matched_program_text)
+        save_txt(info['full_generated_save_path'], full_generated_text)
         # parse matched actions into vh program ============================================
 
-        parsed_program_lines, parse_info = str2program_list(matched_program_lines)
-        full_parsed_program_lines, __ = str2program_list(full_matched_program_lines)
+        if not args.use_robot:
+            parsed_program_lines, parse_info = str2program_list(matched_program_lines)
+            full_parsed_program_lines, __ = str2program_list(full_matched_program_lines)
+            full_parsed_generated_lines, __ = str2program_list(full_generated_lines)
+        else:
+            parsed_program_lines = matched_program_lines
+            full_parsed_program_lines = full_matched_program_lines
+            full_parsed_generated_lines = full_generated_lines
 
         # remove consecutive actions
         parsed_program_lines = remove_same_consecutive(parsed_program_lines)
@@ -289,13 +327,19 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
         full_parsed_program_lines = remove_same_consecutive(full_parsed_program_lines)
         full_parsed_program_text = '\n'.join(full_parsed_program_lines).strip()
 
+        full_parsed_generated_lines = remove_same_consecutive(full_parsed_generated_lines)
+        full_parsed_generated_text = '\n'.join(full_parsed_generated_lines).strip()
+
         if args.verbose:
             print('*************** PARSED TEXT ***************\n{}'.format(parsed_program_text))
         save_txt(info['parsed_save_path'], parsed_program_text)
         save_txt(info['full_parsed_save_path'], full_parsed_program_text)
+        save_txt(info['full_generated_parsed_save_path'], full_parsed_generated_text)
+
         # save generation info
         generation_info[(query_task, query_desc, scene)]['matched_text'] = matched_program_text
         generation_info[(query_task, query_desc, scene)]['full_matched_text'] = full_matched_program_text
+        generation_info[(query_task, query_desc, scene)]['full_generated_text'] = full_generated_text
 
     # save generation info
     generation_info[(query_task, query_desc, scene)]['example_text'] = example_str
@@ -305,22 +349,35 @@ def generate_program(query_task_desc, example_path, scene_path, scene, sentence_
     generation_info[(query_task, query_desc, scene)]['full_parsed_text'] = full_parsed_program_text
     generation_info[(query_task, query_desc, scene)]['parsed_program_lines'] = parsed_program_lines
     generation_info[(query_task, query_desc, scene)]['full_parsed_program_lines'] = full_parsed_program_lines
-    generation_info[(query_task, query_desc, scene)]['parsibility'] = parse_info['parsibility']
+    generation_info[(query_task, query_desc, scene)]['parsibility'] = parse_info['parsibility'] if not args.use_robot else 1.0
 
     return task_info
 
-def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args):
+def generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, correction_example_embedding, args):
     bar = tqdm(total=len(generation_info))
 
     #create list of all scene paths (used to check executability)
     results = []
+
+    
 
     for i, (query_task, query_desc, scene) in enumerate(generation_info):
 
         scene_path = args.scene_path_format.format(scene)
 
         if args.use_similar_example:
-            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device)
+            example_path_idx = select_most_similar_example_idx(sentence_model=sentence_model, query_title=query_task, title_embedding=title_embedding, device=args.device, param_tuning = args.param_tuning)
+
+            if args.param_tuning:
+                
+                for idx in example_path_idx:
+
+                    if load_txt(args.example_paths[idx]).strip().split('\n')[0] != query_task:
+                        example_path_idx = idx
+                        break
+            else:
+                example_path_idx = example_path_idx[0]
+
             example_path = args.example_paths[example_path_idx]
         else:
             example_path = args.example_path
@@ -329,14 +386,221 @@ def generate_all_tasks(generation_info, sentence_model, title_embedding, action_
         # only generate program if not already exists
         parsed_save_path = generation_info[(query_task, query_desc, scene)]['parsed_save_path']
         if not os.path.exists(parsed_save_path) or args.debug or args.fresh:
-            #pdb.set_trace()
-
-            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, generation_info, args)
-
+            
+            info = generate_program((query_task, query_desc), example_path, scene_path, scene, sentence_model, action_list, action_list_embedding, correction_example_embedding, generation_info, args)
             results.append(info)
         bar.update(1)
-    pdb.set_trace()
+    
     return results
+
+def evaluate_pairwise_precision(generation_info, executable_only=False):
+
+
+    def _generate_line_pair_counts(lines, gt=False):
+        
+        if gt is False:
+            output_counts = {}
+
+            for i in range(len(lines)):
+                for j in range(i+1, len(lines)):
+
+                    pair = ' '.join([lines[i], lines[j]])
+
+                    if pair not in output_counts:
+                        output_counts[pair] = 0
+                    
+                    output_counts[pair] += 1
+        
+        else:
+
+            output_counts = []
+
+            for k in range(len(lines)):
+
+                pair_counts = {}
+
+                for i in range(len(lines[k])):
+                    for j in range(i+1, len(lines[k])):
+
+                        pair = ' '.join([lines[k][i], lines[k][j]])
+
+                        if pair not in output_counts:
+                            pair_counts[pair] = 0
+                        
+                        pair_counts[pair] += 1
+                
+                output_counts.append(pair_counts)
+
+        return output_counts
+    
+    def _compute_precision(program_lines, gt_program_lines):
+
+        precision = 0.0
+
+        for gt_count_dict in gt_program_lines:
+
+
+            for pair in program_lines.keys():
+
+                precision += min(program_lines[pair], gt_count_dict[pair] if pair in gt_count_dict else 0.0)
+        
+
+        return precision/len(list(program_lines.keys())) if len(list(program_lines.keys())) > 0.0 else 0.0
+                
+
+
+
+
+
+    #evaluate the n-step similarity for each task
+    task_pairwise_precision = dict()
+
+    for (task, desc, scene), info in generation_info.items():
+
+        try:
+            program_lines = info['parsed_program_lines']
+        except KeyError as e:
+            program_lines = load_txt(info['parsed_save_path']).split('\n')
+        
+        if executable_only and info['executed'] is False:
+            stop_idx = int(info['percent_executed']*len(program_lines))
+            program_lines = program_lines[:stop_idx]
+        
+
+        #if program is empty assign 0.0 n-step similarity
+        if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+            task_pairwise_precision[(task, desc, scene)] = 0.0
+    
+        else:
+            program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+            gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+
+
+            mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+            brevity_pen = min(1, np.exp( 1 - (len(program_lines)/mean_gt_length) ))
+
+
+            program_lines = _generate_line_pair_counts(program_lines, gt=False)
+            gt_program_lines = _generate_line_pair_counts(gt_program_lines, gt = True)
+
+
+            precision_sum = _compute_precision(program_lines, gt_program_lines)
+            precision_sum = (precision_sum/len(gt_program_lines))*brevity_pen
+
+            assert (task, desc, scene) not in task_pairwise_precision
+            
+
+            task_pairwise_precision[(task, desc, scene)] = precision_sum
+            
+
+        info['pairwise_precision'] = task_pairwise_precision[(task, desc, scene)]
+            
+
+    avg_pairwise_precision = np.mean(list(task_pairwise_precision.values()))
+    
+
+    return avg_pairwise_precision
+
+    
+
+def evaluate_n_step_similarity(generation_info, n=4, executable_only=False):
+
+
+    def _get_precision(n_step_windows, n_step_gt_windows):
+
+        gen_windows = {}; gt_windows = {}
+
+        for i in range(len(n_step_windows)):
+            window = ' '.join(n_step_windows[i])
+
+            if window not in gen_windows:
+                gen_windows[window] = 0
+            gen_windows[window] += 1
+        
+        for i in range(len(n_step_gt_windows)):
+            for j in range(len(n_step_gt_windows[i])):
+                
+                gt_window = ' '.join(n_step_gt_windows[i][j])
+
+                if gt_window not in gt_windows:
+                    gt_windows[gt_window] = 0
+                gt_windows[gt_window] += 1
+        
+
+        precision = 0.0; precision_denom = np.sum(list(gen_windows.values()))
+
+        for window in gen_windows.keys():
+            precision += min(gen_windows[window], gt_windows[window] if window in gt_windows else 0.0)
+        
+        return precision/precision_denom if precision_denom > 0 else 0.0
+
+    def _get_sliding_windows(array, window_size):
+        start = 0
+
+        sub_windows = (start + np.expand_dims(np.arange(window_size),0) + np.expand_dims(np.arange(len(array)-window_size+1), 0).T)
+        
+        return array[sub_windows]
+
+
+    #evaluate the n-step similarity for each task
+    task_nstep_similarity_sum = dict()
+
+    for (task, desc, scene), info in generation_info.items():
+
+        try:
+            program_lines = info['parsed_program_lines']
+        except KeyError as e:
+            program_lines = load_txt(info['parsed_save_path']).split('\n')
+        
+        if executable_only and info['executed'] is False:
+            stop_idx = int(info['percent_executed']*len(program_lines))
+            program_lines = program_lines[:stop_idx]
+        
+
+        #if program is empty assign 0.0 n-step similarity
+        if len(program_lines) == 0 or (len(program_lines)==1 and len(program_lines[0]) == 0):
+            task_nstep_similarity_sum[(task, desc, scene)] = 0.0
+    
+        else:
+            program_lines = preprocess_program_lines_for_lcs(program_lines)
+
+            gt_program_lines = [ preprocess_program_lines_for_lcs(x) for x in info['gt_program_lines'] ]
+            
+            mean_gt_length = np.mean(list(map(lambda x: len(x), gt_program_lines)))
+            brevity_pen = min(1, np.exp( (1 - len(program_lines) )/mean_gt_length) )
+
+            precision_sum = 0.0
+
+            for i in range(1, n+1):
+                
+                # shape: (num_windows , n)
+                n_step_windows = _get_sliding_windows(np.array(program_lines), i)
+                
+                # shape: (num_examples, num_windows, n)
+                n_step_gt_windows = [_get_sliding_windows(np.array(line), i) for line in gt_program_lines]
+
+
+                precision_sum += _get_precision(n_step_windows, n_step_gt_windows)
+            
+
+            precision_sum = (precision_sum/n)*brevity_pen
+
+            assert (task, desc, scene) not in task_nstep_similarity_sum
+            
+
+            task_nstep_similarity_sum[(task, desc, scene)] = precision_sum
+            
+
+        info['n_step_similarity'] = task_nstep_similarity_sum[(task, desc, scene)]
+            
+    # 
+    avg_nstep_similarty_sum = np.mean(list(task_nstep_similarity_sum.values()))
+    
+
+    return avg_nstep_similarty_sum
+
+        
 
 def evaluate_lcs_score(generation_info, verbose=False):
     # evaluate lcs score for each task
@@ -399,7 +663,7 @@ def evaluate_lcs_score(generation_info, verbose=False):
                     print('\n* '.join(info['gt_sketch_lines'][np.argsort(curr_lcs)[-1]]))
                     print('*' * 40)
                     print()
-        info['lcs'] = task_lcs[(task, desc, scene)]
+        info['lcs_ep'] = task_lcs[(task, desc, scene)]
         info['sketch_lcs'] = task_sketch_lcs[(task, desc, scene)]
         info['most_similar_gt_program_text'] = most_similar_gt_program_text
         info['most_similar_gt_sketch_text'] = most_similar_gt_sketch_text
@@ -418,13 +682,20 @@ def evaluate_lcs_score(generation_info, verbose=False):
 
 def construct_generation_dict(args, evaluated_scenes):
     """init info dict to save relavent infos"""
-    #pdb.set_trace()
+    
     sketch_dict = load_dict(SKETCH_PATH)
     generation_info = dict()
+    
+    
     # iterate through all test programs and save the ground truth for later evaluation
     for test_path in args.test_paths:
+        task = load_txt(test_path).strip().split('\n')[0]
+
+        
+        
+        
         for scene in evaluated_scenes:
-            #pdb.set_trace()
+            
             lines = load_txt(test_path).strip().split('\n')
             task = lines[0]
             if args.add_desc:
@@ -448,12 +719,30 @@ def construct_generation_dict(args, evaluated_scenes):
                 generation_info[(task, desc, scene)]['id'] = num_existing
                 generation_info[(task, desc, scene)]['formatted_task_title'] = task.lower().strip().replace(' ', '_')
                 generation_info[(task, desc, scene)]['base_save_name'] = '{}-{}-scene{}.txt'.format(generation_info[(task, desc, scene)]['formatted_task_title'], num_existing, scene)
+
+                #final raw plan text
                 generation_info[(task, desc, scene)]['raw_save_path'] = os.path.join(args.api_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                #full raw plan text 
                 generation_info[(task, desc, scene)]['full_save_path'] = os.path.join(args.full_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                #full generated plan text (w/o translation)
+                generation_info[(task, desc, scene)]['full_generated_save_path'] = os.path.join(args.full_generated_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # matched plan text (for raw plan)
                 generation_info[(task, desc, scene)]['matched_save_path'] = os.path.join(args.matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # full matched plan text (for full raw plan)
                 generation_info[(task, desc, scene)]['full_matched_save_path'] = os.path.join(args.full_matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # parsed plan text (for raw plan)
                 generation_info[(task, desc, scene)]['parsed_save_path'] = os.path.join(args.parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # parsed plan text (for full raw plan)
                 generation_info[(task, desc, scene)]['full_parsed_save_path'] = os.path.join(args.full_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+                # full generated plan text (w/o translation)
+                generation_info[(task, desc, scene)]['full_generated_parsed_save_path'] = os.path.join(args.full_generated_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
 
             # if the file has sketch annotation, store those too
             base_fname = '/'.join(test_path.split('/')[-2:])[:-4]
@@ -468,9 +757,80 @@ def construct_generation_dict(args, evaluated_scenes):
                     generation_info[(task, desc, scene)]['gt_sketch_text'] = [sketch_text]
                     generation_info[(task, desc, scene)]['gt_sketch_lines'] = [sketch_lines]
     percent_w_annotation = sum(["gt_sketch_text" in info for info in generation_info.values()]) / len(generation_info)
-    #pdb.set_trace()
+
+
     print(f'** percent of tasks having sketch annotation: {percent_w_annotation:.2f}')
     return generation_info
+
+
+
+
+
+def construct_generation_dict_robot(args):
+    """init info dict to save relavent infos"""
+    #
+    sketch_dict = load_dict(SKETCH_PATH)
+    generation_info = dict()
+    
+    
+    # iterate through all test programs and save the ground truth for later evaluation
+    for i, test_path in enumerate(args.test_paths):
+
+        scene = i+1
+
+        task = load_txt(test_path).strip().split('\n')[0]
+
+        lines = load_txt(test_path).strip().split('\n')
+        task = lines[0]
+        if args.add_desc:
+            desc = lines[1]
+        else:
+            desc = ''
+        program_lines = lines[4:]
+        program_text = '\n'.join(program_lines).strip()
+        # init the dict for each program
+        if (task, desc, scene) in generation_info:
+            # if the same task has appeared before, keep the current one in a list of ground truth
+            generation_info[(task, desc, scene)]['gt_program_text'].append(program_text)
+            generation_info[(task, desc, scene)]['gt_program_lines'].append(program_lines)
+        else:
+            generation_info[(task, desc, scene)] = dict()
+            generation_info[(task, desc, scene)]['gt_path'] = test_path
+            generation_info[(task, desc, scene)]['gt_program_text'] = [program_text]
+            generation_info[(task, desc, scene)]['gt_program_lines'] = [program_lines]
+            # find the highest number to use as id, such that within the task, the id is unique
+            num_existing = len([_desc for (_task, _desc, _scene) in generation_info if _task == task and _scene==scene])
+            generation_info[(task, desc, scene)]['id'] = num_existing
+            generation_info[(task, desc, scene)]['formatted_task_title'] = task.lower().strip().replace(' ', '_')
+            generation_info[(task, desc, scene)]['base_save_name'] = '{}-{}-scene{}.txt'.format(generation_info[(task, desc, scene)]['formatted_task_title'], num_existing, scene)
+
+            #final raw plan text
+            generation_info[(task, desc, scene)]['raw_save_path'] = os.path.join(args.api_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            #full raw plan text 
+            generation_info[(task, desc, scene)]['full_save_path'] = os.path.join(args.full_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            #full generated plan text (w/o translation)
+            generation_info[(task, desc, scene)]['full_generated_save_path'] = os.path.join(args.full_generated_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            # matched plan text (for raw plan)
+            generation_info[(task, desc, scene)]['matched_save_path'] = os.path.join(args.matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            # full matched plan text (for full raw plan)
+            generation_info[(task, desc, scene)]['full_matched_save_path'] = os.path.join(args.full_matched_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            # parsed plan text (for raw plan)
+            generation_info[(task, desc, scene)]['parsed_save_path'] = os.path.join(args.parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            # parsed plan text (for full raw plan)
+            generation_info[(task, desc, scene)]['full_parsed_save_path'] = os.path.join(args.full_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+            # full generated plan text (w/o translation)
+            generation_info[(task, desc, scene)]['full_generated_parsed_save_path'] = os.path.join(args.full_generated_parsed_save_path, generation_info[(task, desc, scene)]['base_save_name'])
+
+        
+    return generation_info
+
 
 
 
@@ -488,7 +848,7 @@ def transformers_engine(model_id, device, seed):
     def _generator(kwargs):
         input_ids = tokenizer(kwargs['prompt'], return_tensors="pt").input_ids.to(device)
         prompt_len = input_ids.shape[-1]
-        #pdb.set_trace()
+        #
         output_dict = model.generate(input_ids,
                         do_sample=True,
                         max_length=prompt_len + kwargs['max_tokens'],
@@ -540,14 +900,14 @@ def transformers_engine(model_id, device, seed):
     return _generator_multi
 
 def main(args):
+   
     # define lm used for generation
-    pdb.set_trace()
     try:
         args.engine = transformers_engine(args.engine, args.device, args.seed)
     except Exception as e:
         print(e.__class__.__name__, str(e))
         print('** Using OpenAI API')
-        if not 'codex' in args.engine:
+        if not 'codex' and not 'code' in args.engine:
             assert args.allow_charges
     start = time.time()
     if args.skip_load and not args.use_similar_example:
@@ -582,6 +942,7 @@ def main(args):
     elif args.use_similar_example:
         print('creating title embedding for "use_similar_example"... ', end='')
         titles = []
+        
         for example_path in args.example_paths:
             example = load_txt(example_path)
             program_lines = example.strip().split('\n')
@@ -593,20 +954,58 @@ def main(args):
         print('done! (time taken: {:.2f} s)'.format(time.time() - start))
     else:
         title_embedding = None
+
+    
+    correction_example_embedding = None
+
+    if args.learned_method in set(['few-shot', 'reasoning']) and os.path.exists(args.correction_embedding_path):
+        print('loading correction embedding for planning with {}... '.format(args.learned_method), end='')
+
+        correction_example_embedding = torch.load(args.correction_embedding_path)
+
+        print('done! (time taken: {:.2f} s)'.format(time.time() - start))
+    
+    elif args.learned_method in set(['few-shot', 'reasoning']):
+        print('creating correction embedding for planning with {}... '.format(args.learned_method), end='')
+
+        correction_examples = []
+        
+        for example_path in args.correction_example_paths:
+
+            example = load_txt(example_path)
+
+            error_step = example.split('\n\n')[0].split('\n')[1].split(':')[1].strip().lower()
+
+            task_name =  example.split('\n\n')[1].split('\n')[0].split(':')[1].strip().lower()
+            full_plan = '\n'.join(example.split('\n\n')[1].split('\n')[:-5])
+            correction_examples.append(full_plan)
+        
+        
+        correction_example_embedding = sentence_model.encode(correction_examples, batch_size=args.batch_size, convert_to_tensor=True, device=args.device)
+
+        # cache to device
+        torch.save(correction_example_embedding.detach().cpu(), args.correction_embedding_path)
+        print('done! (time taken: {:.2f} s)'.format(time.time() - start))
+
+
+
     # generate vh proram ============================================
     evaluated_scenes = range(1, 8) if args.scene_num is None else [args.scene_num]
-    generation_info = construct_generation_dict(args, evaluated_scenes)
 
-    #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
-    #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
+    if args.use_robot:
+        generation_info = construct_generation_dict_robot(args)
+    else:
+        generation_info = construct_generation_dict(args, evaluated_scenes)
 
-    execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, args)
+   
 
+    execution_results = generate_all_tasks(generation_info, sentence_model, title_embedding, action_list, action_list_embedding, correction_example_embedding, args)
+    
     parsed_program_paths = []
     for k in generation_info:
         parsed_program_paths.append(generation_info[k]['parsed_save_path'])
 
-
+    
     # save graph and unity-modified scripts for visualization
     for r in execution_results:
         # pop init_graph_dict from execution_results and save separately for visualization, and such that it's not uploaded to wandb
@@ -616,18 +1015,36 @@ def main(args):
 
             title = os.path.basename(r['script_path'])[:-6]
             save_dict(os.path.join(args.init_graph_save_path, '{}.json'.format(title)), init_graph_dict)
+            
             # save modified scripts for visualization
-            save_txt(os.path.join(args.unity_parsed_save_path, '{}.txt'.format(title)), r['modified_program'])
+            if not args.use_robot:
+                save_txt(os.path.join(args.unity_parsed_save_path, '{}.txt'.format(title)), r['modified_program'])
+
+    
+    # log generation info
+    generation_info = update_info_with_execution(generation_info, execution_results, args.use_robot)
+
+    
     # log to wandb ========================================================
     # log executability
-    percent_executed = sum([r['executed'] for r in execution_results]) / len(execution_results)
-    wandb.run.summary["percent_executed"] = percent_executed
-    print('** percent_executed: {:.2f}'.format(percent_executed))
+    executability = sum([r['executed'] for r in execution_results]) / len(execution_results)
+    wandb.run.summary["executability"] = executability
+    print('** executability: {:.2f}'.format(executability))
+
+    #log closed loop percent executed
+    avg_percent_executed_inloop = sum([r['percent_executed_inloop'] for r in execution_results])/len(execution_results)
+    wandb.run.summary["avg_percent_executed_inloop"] = avg_percent_executed_inloop
+    print('** average percent executed (in-loop): {:.2f}'.format(avg_percent_executed_inloop))
+
+    #log percent executed on final plan
+    avg_percent_executed = sum([r['percent_executed'] for r in execution_results])/len(execution_results)
+    wandb.run.summary["avg_percent_executed"] = avg_percent_executed
+    print('** average percent executed (final plan): {:.2f}'.format(avg_percent_executed_inloop))
 
     #log number of corrective steps
-    avg_corrective_steps = sum(r['total_steps']-r['final_steps'] for r in execution_results) / len(execution_results)
-    wandb.run.summary["corrective_steps"] = avg_corrective_steps
-    print('** average corrective_steps: {:.2f}'.format(avg_corrective_steps))
+    avg_num_replans = sum(r['num_replans'] for r in execution_results) / len(execution_results)
+    wandb.run.summary["num_replans"] = avg_num_replans
+    print('** average num replans: {:.2f}'.format(avg_num_replans))
 
     # evaluate lcs score
     avg_lcs, avg_sketch_lcs = evaluate_lcs_score(generation_info, verbose=False)
@@ -635,16 +1052,34 @@ def main(args):
     print('** avg_lcs: {:.2f}'.format(avg_lcs))
     wandb.run.summary["avg_sketch_lcs"] = avg_sketch_lcs
     print('** avg_sketch_lcs: {:.2f}'.format(avg_sketch_lcs))
+
+    wandb.run.summary["avg_lcs_ep"] = avg_lcs
+    print('** avg_lcs_ep: {:.2f}'.format(avg_lcs))
+
+    #evaluate the n-step similarity score (with clipping)
+    n_step_similarity = evaluate_n_step_similarity(generation_info, n=3)
+
+    wandb.run.summary["n_step_similarity"] = n_step_similarity
+    print('** avg n_step_similarity: {:.2f}'.format(n_step_similarity))
+
+    #evaluate the pairwise precision score (with clipping)
+    pairwise_precision = evaluate_pairwise_precision(generation_info)
+
+    wandb.run.summary["pairwise_precision"] = pairwise_precision
+    print('** avg pairwise precision: {:.2f}'.format(pairwise_precision))
+
     # get average program lengths
     avg_parsed_length = get_avg_program_length(parsed_program_paths)
-    wandb.run.summary['avg_parsed_length'] = avg_parsed_length
-    print('** avg_parsed_length: {:.2f}'.format(avg_parsed_length))
+    wandb.run.summary['avg_no_steps'] = avg_parsed_length
+    print('** avg_no_steps: {:.2f}'.format(avg_parsed_length))
+
     # get average parsibility
     avg_parsibility = np.mean([info['parsibility'] for info in generation_info.values()])
     wandb.run.summary['avg_parsibility'] = avg_parsibility
     print('** avg_parsibility: {:.2f}'.format(avg_parsibility))
+
     # get normalized overall score for hparam sweep ranking
-    normalized_exec = normalize(percent_executed, min_v=.09, max_v=.88)
+    normalized_exec = normalize(executability, min_v=.09, max_v=.88)
     normalized_lcs = normalize(avg_lcs, min_v=.10, max_v=.24)
     overall_score = normalized_exec + normalized_lcs
     wandb.run.summary['normalized_exec'] = normalized_exec
@@ -654,12 +1089,9 @@ def main(args):
     print('** normalized_lcs: {:.2f}'.format(normalized_lcs))
     print('** overall_score: {:.2f}'.format(overall_score))
 
-    # log generation info
-    generation_info = update_info_with_execution(generation_info, execution_results)
 
-    #{ 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
-    #{'parsed_program','executed','scene_path', 'script_path','init_graph_dict','modified_program','execution_error','precond_error'}
-    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'parsibility', 'executed', 'lcs', 'most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'total_steps', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error']
+    # 
+    summary_keys = ['task', 'description', 'scene', 'example_text', 'final_raw_text', 'full_raw_text', 'all_errors', 'matched_text', 'full_matched_text', 'full_generated_text', 'parsibility', 'executed', 'percent_executed','percent_executed_inloop', 'lcs_ep', 'n_step_similarity', 'pairwise_precision','most_similar_gt_program_text', 'execution_error', 'precond_error', 'parsing_error','empty_program_error', 'final_steps', 'total_steps','avg_affordance', 'num_replans', 'parsed_text','full_parsed_text', 'sketch_lcs', 'most_similar_gt_sketch_text','no_gen_error','score_error', 'step_probabilities','closest_probabilities']
     table_data = []
     for (task, desc, scene), info in generation_info.items():
         data_list = [task, desc, scene]
@@ -679,27 +1111,38 @@ def main(args):
                     curr_value = [e.replace('\n', ', ') for e in curr_value]
                 else:
                     curr_value = curr_value.replace('\n', ', ')
+            if k=='step_probabilities' or k=='closest_probabilities':
+                curr_value = curr_value[0]
+                curr_value = ','.join([str(e) for e in curr_value])
+            
+            
             data_list.append(curr_value)
         table_data.append(data_list)
 
+    #
     # construct table and log to wandb
     table = wandb.Table(data=table_data, columns=summary_keys)
     wandb.run.summary["execution_infos"] = table
 
     wandb.log({
-        'avg_lcs': avg_lcs,
+        'avg_lcs_ep': avg_lcs,
         'avg_sketch_lcs': avg_sketch_lcs,
-        'avg_parsed_length': avg_parsed_length,
+        'avg_no_steps': avg_parsed_length,
+        'avg_num_replans': avg_num_replans,
         'avg_parsibility': avg_parsibility,
-        'percent_executed': percent_executed,
-        'avg_corrective_steps': avg_corrective_steps,
+        'avg_executability': executability,
+        'avg_percent_executed': avg_percent_executed,
+        'avg_percent_executed_inloop': avg_percent_executed_inloop,
+        'avg_n_step_similarity': n_step_similarity,
+        'avg_pairwise_precision': pairwise_precision,
         'execution_infos': table,
         'normalized_exec': normalized_exec,
         'normalized_lcs': normalized_lcs,
         'overall_score': overall_score
     })
+    
 
-def update_info_with_execution(generation_info, execution_results):
+def update_info_with_execution(generation_info, execution_results, use_robot):
 
     '''
     execution_results: list of dictionaries with keys ==> { 'parsed_program', 'executed', 'scene_path', 'script_path', 'init_graph_dict', 'modified_program', 'execution_error', 'precond_error', 'parsing_error', 'empty_program_error', 'total_steps'}
@@ -709,25 +1152,38 @@ def update_info_with_execution(generation_info, execution_results):
     # aggregate execution_results by parsed script path
     script2results = dict()
     for r in execution_results:
-        scene_num = int(parse.parse(args.scene_path_format, r['scene_path'])[0])
+        scene_num = int(parse.parse(args.scene_path_format, r['scene_path'])[0]) if not use_robot else r['scene_path']
         if r['script_path'] not in script2results:
             script2results[r['script_path']] = dict()
         assert scene_num not in script2results[r['script_path']]
-        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'] )
+        script2results[r['script_path']][scene_num] = dict(executed=r['executed'], percent_executed = r['percent_executed'], percent_executed_inloop = r['percent_executed_inloop'], execution_error=r['execution_error'], precond_error=r['precond_error'], parsing_error=r['parsing_error'], empty_program_error=r['empty_program_error'], total_steps=r['total_steps'], final_steps = r['final_steps'], avg_affordance=r['avg_affordance'],no_gen_error = r['no_gen_error'], score_error = r['score_error'], all_errors = r['all_errors'], step_probabilities = r['step_probabilities'], closest_probabilities = r['closest_probabilities'] )
 
     for (task, desc, scene), info in generation_info.items():
         for script_path, script_results in script2results.items():
             if info['parsed_save_path'] == script_path:
                 info['scene_nums'] = [scene_num for scene_num in script_results.keys()]
                 info['executed'] = [scene_result['executed'] for scene_result in script_results.values()]
+
+                info['percent_executed'] = [scene_result['percent_executed'] for scene_result in script_results.values()]
+                info['percent_executed_inloop'] = [scene_result['percent_executed_inloop'] for scene_result in script_results.values()]
+
+                # log the error information for execution across scenes
                 info['execution_error'] = [scene_result['execution_error'] for scene_result in script_results.values()]
                 info['precond_error'] = [scene_result['precond_error'] for scene_result in script_results.values()]
                 info['parsing_error'] = [scene_result['parsing_error'] for scene_result in script_results.values()]
                 info['empty_program_error'] = [scene_result['empty_program_error'] for scene_result in script_results.values()]
-                info['total_steps'] = [scene_result['total_steps'] for scene_result in script_results.values()]
                 info['no_gen_error'] = [scene_result['no_gen_error'] for scene_result in script_results.values()]
                 info['score_error'] = [scene_result['score_error'] for scene_result in script_results.values()]
                 info['all_errors'] = [scene_result['all_errors'] for scene_result in script_results.values()]
+
+                # log the step information for execution across scenes
+                info['total_steps'] = [scene_result['total_steps'] for scene_result in script_results.values()]
+                info['final_steps'] = [scene_result['final_steps'] for scene_result in script_results.values()]
+                info['avg_affordance'] = [scene_result['avg_affordance'] for scene_result in script_results.values()]
+                
+                #log the LLM probabilities for each step across scenes
+                info['step_probabilities'] = [scene_result['step_probabilities'] for scene_result in script_results.values()]
+                info['closest_probabilities'] = [scene_result['closest_probabilities'] for scene_result in script_results.values()]
 
     return generation_info
 
@@ -739,7 +1195,12 @@ if __name__ == '__main__':
     # do not enable wandb output
     os.environ["WANDB_SILENT"] = "true"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    pdb.set_trace()
+    
     args = get_args()
     wandb.config.update(args, allow_val_change=True)
+
+    if not args.use_robot:
+        from generation_utils import *
+    else:
+        from generation_utils_robot import * 
     main(args)

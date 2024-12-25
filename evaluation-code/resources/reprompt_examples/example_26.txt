@@ -1,0 +1,14 @@
+Type: agent-proximity
+Failed Step: Sit on couch
+
+Task: Text friends while sitting on couch
+Step 1: Find phone
+Step 2: Turn to phone
+Step 3: Look at phone
+Step 4: Turn to couch
+Step 5: Sit on couch
+Error Object: couch
+Error Type: I am not near the object
+Skip: False
+Error: I am not near the couch. A correct step would be to
+Step 5: Walk to couch

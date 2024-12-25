@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Pick up cat hair
+
+Task: Pick up cat hair
+Error Object: None
+Error Type: no generated output
+Skip: False
+Error: How can I pick up cat hair? A correct step would be to
+Step 1: Walk to cat

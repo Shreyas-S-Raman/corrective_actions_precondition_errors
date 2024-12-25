@@ -1,0 +1,14 @@
+Type: agent-proximity
+Failed Step: Find laptop
+
+Task: Play on laptop
+Step 1: Walk to home office
+Step 2: Walk to chair
+Step 3: Find chair
+Step 4: Sit on chair
+Step 5: Find laptop
+Error Object: laptop
+Error Type: I am not near the object
+Skip: False
+Error: I am not near the laptop. A correct step would be to
+Step 5: Walk to laptop

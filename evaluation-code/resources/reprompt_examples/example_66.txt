@@ -1,0 +1,15 @@
+Type: not-holding
+Failed Step: Put chair on diningtable
+
+Task: Put in chair
+Step 1:  Walk to dining room
+Step 2: Walk to chair
+Step 3: Find chair
+Step 4: Pull chair
+Step 5: Sit on chair
+Step 6: Put chair on diningtable
+Error Object: chair
+Error Type: not holding object
+Skip: False
+Error: I am not holding the chair. A correct step would be to
+Step 2: Grab chair

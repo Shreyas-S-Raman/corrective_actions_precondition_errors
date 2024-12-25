@@ -1,0 +1,14 @@
+Type: internally contained
+Failed Step: Grab coatrack
+
+Task: Put on coat
+Step 1: Walk to bedroom
+Step 2: Walk to closet
+Step 3: Find closet
+Step 4: Find coatrack
+Step 5: Grab coatrack
+Error Object: coatrack
+Error Type: object inside something else
+Skip: False
+Error: the coatrack is inside the cupboard. A correct step would be to
+Step 5: Open cupboard

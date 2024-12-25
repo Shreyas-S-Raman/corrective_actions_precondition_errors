@@ -1,0 +1,44 @@
+,phrase,trial,ablation,grounded_verb,cosine_sim,parsed_noun,detected,mask_iou,clipseg_mask_file,binary_mask_file,color_image_file,executed,compute_time,iou
+0,Pick up the redbull can,1,single_primitive,pick up,0.975238561630249,the redbull can,0,,mask1,mask1,raw_image1.jpg,,2.3058290481567383,0.29129893043804955
+1,Pick up the redbull can,2,single_primitive,pick up,0.975238561630249,the redbull can,1,,mask2,mask2,raw_image2.jpg,1.0,0.3732523918151855,0.623
+2,Pick up the cup,1,single_primitive,pick up,0.9793599843978882,the cup,1,,mask3,mask3,raw_image3.jpg,1.0,0.9108150005340576,0.2358203491431579
+3,Pick up the cup,2,single_primitive,pick up,0.9793599843978882,the cup,1,,mask4,mask4,raw_image4.jpg,1.0,2.353498220443726,0.20727451715043455
+4,Pick up the redbull can,3,single_primitive,pick up,0.975238561630249,the redbull can,0,,mask5,mask5,raw_image5.jpg,,12.343881130218506,0.13170388155262105
+5,Pick up the redbull can,4,single_primitive,pick up,0.975238561630249,the redbull can,1,,mask6,mask6,raw_image6.jpg,1.0,12.129873514175417,0.3049855145484318
+6,Pick up the cup,3,single_primitive,pick up,0.9793599843978882,the cup,1,,mask7,mask7,raw_image7.jpg,1.0,2.321490049362183,0.8286515373903881
+7,Pick up the cup,4,single_primitive,pick up,0.9793599843978882,the cup,1,,mask8,mask8,raw_image8.jpg,1.0,0.9354088306427,0.29950145779083487
+8,Pick up the cup,5,single_primitive,pick up,0.9793599843978882,the cup,1,,mask9,mask9,raw_image9.jpg,1.0,2.390872955322266,0.7432445096997906
+9,Pick up the cup,6,single_primitive,pick up,0.9793599843978882,the cup,1,,mask10,mask10,raw_image10.jpg,0.0,12.356342792510986,0.5967727063162748
+10,Pick up the redbull can,5,single_primitive,pick up,0.975238561630249,the redbull can,1,,mask11,mask11,raw_image11.jpg,1.0,2.196021795272827,0.5089748055265297
+11,Pick up the redbull can,6,single_primitive,pick up,0.975238561630249,the redbull can,1,,mask12,mask12,raw_image12.jpg,0.0,0.900838851928713,0.19574261674222496
+12,Pick up the stapler,1,single_primitive,pick up,0.9670083522796632,the stapler,1,,mask13,mask13,raw_image13.jpg,0.0,2.387460470199583,0.006815526941203326
+13,Pick up the stapler,2,single_primitive,pick up,0.9670083522796632,the stapler,1,,mask14,mask14,raw_image14.jpg,,2.349830150604248,0.25046947399888575
+14,Pick up a marker,1,single_primitive,pick up,0.9473031759262084,a marker,0,,mask15,mask15,raw_image15.jpg,,0.859513759613037,0.0
+15,Pick up a marker,2,single_primitive,pick up,0.9473031759262084,a marker,0,,mask15,mask15,raw_image15.jpg,,0.859513759613037,0.0
+16,Pick up the stapler,3,single_primitive,pick up,0.9670083522796632,the stapler,1,,mask16,mask16,raw_image16.jpg,0.0,2.387292385101318,0.09337220095138649
+17,Pick up the stapler,4,single_primitive,pick up,0.9670083522796632,the stapler,1,,mask17,mask17,raw_image17.jpg,0.0,7.292023181915283,0.34551492383533855
+18,Pick up something to drink,1,implied_expression,pick up,0.9658282399177552,something to drink,1,,mask18,mask18,raw_image18.jpg,1.0,5.754028797149658,0.48791178854313516
+19,Pick up something to drink,2,implied_expression,pick up,0.9658282399177552,something to drink,1,,mask19,mask19,raw_image19.jpg,1.0,7.04323172569275,0.8202838201470214
+20,Pick up a tasty snack,1,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask20,mask20,raw_image20.jpg,1.0,7.289872407913208,0.24692529700101964
+21,Pick up a tasty snack,2,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask21,mask21,raw_image21.jpg,1.0,7.22843599319458,0.6585960970677104
+22,Pick up something to drink,3,implied_expression,pick up,0.9658282399177552,something to drink,1,,mask22,mask22,raw_image22.jpg,0.0,7.26757574081421,0.6044830951507728
+23,Pick up something to drink,4,implied_expression,pick up,0.9658582599178552,something to drink,1,,mask23,mask23,raw_image23.jpg,1.0,7.26757574081421,0.771431243724202
+24,Pick up a tasty snack,3,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask24,mask24,raw_image24.jpg,1.0,7.206451654434204,0.8693021343130476
+25,Pick up a tasty snack,4,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask25,mask25,raw_image25.jpg,0.0,7.294762134552002,0.0003069842520441596
+26,Pick up something to drink,5,implied_expression,pick up,0.9658282399177552,something to drink,1,,mask26,mask26,raw_image26.jpg,0.0,7.313765287399292,0.5257555724346171
+27,Pick up something to drink,6,implied_expression,pick up,0.9658282399177552,something to drink,1,,mask27,mask27,raw_image27.jpg,0.0,7.19416570663452,0.3082425634934543
+28,Pick up a tasty snack,5,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask28,mask28,raw_image28.jpg,1.0,2.323118209838867,0.5207028963324579
+29,Pick up a tasty snack,6,implied_expression,pick up,0.9292367696762084,a tasty snack,1,,mask29,mask29,raw_image29.jpg,1.0,2.155441761016846,0.2797909242446901
+30,Pick up something to wear on my head,1,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask30,mask30,raw_image30.jpg,1.0,2.349030256271362,0.7539290125729058
+31,Pick up something to wear on my head,2,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask31,mask31,raw_image31.jpg,1.0,2.35429358482361,0.768133698825651
+32,Pick up something to wear on my head,3,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask32,mask32,raw_image32.jpg,1.0,2.27267861366272,0.5436920976681877
+33,Pick up something to wear on my head,4,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask33,mask33,raw_image33.jpg,1.0,2.2504940032959,0.6157231313578063
+34,Pick up something to wear on my head,5,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask34,mask34,raw_image34.jpg,1.0,2.361051082611084,0.8253684171783461
+35,Pick up something to wear on my head,6,implied_expression,pick up,0.9756748676300048,something to wear on my head,1,,mask35,mask35,raw_image35.jpg,1.0,2.41903805732727,0.5329930240410202
+36,Pick up my prescription,3,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask36,mask36,raw_image36.jpg,,0.94444465637207,0.0
+37,Pick up my prescription,4,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask37,mask37,raw_image37.jpg,,0.840099811553955,0.0
+38,Pick up my prescription,1,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask38,mask38,raw_image38.jpg,,0.921606063842773,0.0
+39,Pick up my prescription,2,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask39,mask39,raw_image39.jpg,,2.31076145172119,0.0
+40,Pick up my prescription,5,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask40,mask40,raw_image40.jpg,,0.968641519546509,0.0
+41,Pick up my prescription,6,implied_expression,pick up,0.9570991396903992,my prescription,0,,mask41,mask41,raw_image41.jpg,,2.239399194717407,0.0
+42,pick up the hole puncher,0,test,pick up,1.000000238418579,the hole puncher,0,,mask43,mask43,raw_image43.jpg,,17.24610686302185,0.0

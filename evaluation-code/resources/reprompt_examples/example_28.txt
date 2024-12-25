@@ -1,0 +1,16 @@
+Type: agent-proximity
+Failed Step: Find television
+
+Task: Turn on TV
+Step 1: Walk to home office
+Step 2: Walk to remote control
+Step 3: Find remote control
+Step 4: Grab remote control
+Step 5: Find couch
+Step 6: Sit on couch
+Step 7: Find television
+Error Object: television
+Error Type: I am not near the object
+Skip: False
+Error: I am not near the television. A correct step would be to
+Step 1: Walk to television

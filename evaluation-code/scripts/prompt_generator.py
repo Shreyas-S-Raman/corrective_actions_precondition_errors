@@ -1,44 +1,262 @@
+from distutils.log import error
+from prompt_config import  prompt_templates, error_provided, suggestion_provided
+import re
 
 
-class PromptGenerator():
+class ErrorParsing():
+
+    def __init__(self, custom_cause, third_person, chosen_causal_reprompts):
+        self.custom_cause = custom_cause
+        self.third_person = third_person
+        self.causal_reprompts = chosen_causal_reprompts
+
+    def _get_action_and_objs(self, block_str):
+        """ Given a str block [Rinse] <CLEANING SOLUTION> (1)
+            parses the block, returning Action, List Obj, List Instance
+        """
+        action = block_str[1:block_str.find(']')]
+        block_str = block_str[block_str.find(']')+3:-1]
+        block_split = block_str.split('> (') # each element is <name_obj> (num)
+
+        #obj_names = [block[0:block.find('>')].lower().strip().replace('_',' ') for block in block_split if len(len(block[0:block.find('>')].strip()) > 0)]
+        
+        return action, block_split[0]
+    
+    def _get_error_reason(self, error_message, error_cause, error_params, obj, action):
+
+        return self._parse_precond_error(error_message, obj, action) if error_cause=='precond' else self._parse_execution_error(error_message, error_params[0], obj, action)
+    
+    def _parse_precond_error(self, error_message, obj, action):
+
+        unflipped_state = {'PLUGOUT': 'plugged out', 'PLUGIN':'plugged in', 'SWITCHOFF': 'turned off', 'SWITCHON': 'truned on', 'PUTOFF': 'off', 'SIT': 'sitting', 'STANDUP': 'standing up', 'WAKEUP': 'standing up'}
+
+        if not self.custom_cause:
+            return error_message.split(',')[1].strip().lower()
+        else: 
+            return '{} is already {}'.format(obj, unflipped_state[action.upper()])
+        
+    def _parse_execution_error(self, error_message, error_params, obj, action):
+
+        #add missing arguments to error parameters
+        if 'obj' not in error_params:
+            error_params['obj'] = obj
+        if 'action' not in error_params:
+            error_params['action'] = action
+        
+        if not self.custom_cause:
+
+            '''
+            The cause of error always occurs after the first '<' character
+
+            e.g. Script is not executable, since <character> (65) is not holding <mail> (1000) when executing "[PUTBACK] <mail> (1000) <table> (107) [5]"
+
+            character is not holding mail when executing putback mail table
+            '''
+            error_message = error_message[error_message.find('<'):]
+
+            #replace bracket and quotation formatting in error message
+            error_message = error_message.replace('[','').replace(']','')
+            error_message = error_message.replace('<','').replace('>','')
+            error_message = error_message.replace('(','').replace(')','')
+            error_message = error_message.replace('"','')
+            error_message = re.sub('\d','',error_message)
+
+            #remove extra spaces caused by earlier replacements
+            error_message = error_message.replace('  ', ' ')
+            error_message = error_message.replace('executing', 'trying to')
+
+            if not self.third_person:
+                error_message = error_message.replace('character is', 'I am')
+            
+            return error_message.strip().lower()
+
+        else:
+
+            #fetching the desired reprompt format for the error type along with parameter data for the reprompt
+            [reprompt_format, reprompt_params] = self.causal_reprompts[error_params['type']]
+
+
+            reprompt_params = list(map(lambda x: self._format_error_param(error_params[x]), reprompt_params))
+
+            return reprompt_format.format(*reprompt_params)
+    
+    def _format_error_param(self, error_param:str):
+        error_param = error_param.replace('[','').replace(']','')
+        error_param = error_param.replace('<','').replace('>','')
+        error_param = error_param.replace('(','').replace(')','')
+        error_param = error_param.replace('_',' ')
+        error_param = re.sub('\d','',error_param)
+        #remove extra spaces caused by earlier replacements
+        error_param = error_param.replace('  ',' ')
+
+        error_param = error_param.strip().lower()
+
+        if error_param == 'character':
+            error_param = error_param + 'is' if self.third_person else 'I am'
+        
+        return error_param
+
+class PromptContext():
+
+    def __init__(self, chosen_context):
+
+        context_transformations = {'full-history': self.full_history, 'task-history': self.task_history, 'step-history': self.step_history}
+
+        self.context_transformation = context_transformations[chosen_context]
+
+    def full_history(self, plan_text):
+        return plan_text
+    
+    def task_history(self, plan_text):
+        return plan_text.split('\n\n')[1]
+
+    def step_history(self, plan_text):
+        related_task_text = plan_text.split('\n\n')[1]
+        task_name = related_task_text.split('\n')[0]
+        step_and_error = related_task_text.split('\n')[:-2]
+        return '\n'.join(task_name, step_and_error)
+
+    def change_context(self, plan_text, executed):
+
+        if executed:
+            return plan_text
+        
+        else:
+            return self.context_transformation(plan_text)
+    
+    def load_txt(self, load_path):
+        if load_path[-4:] != '.txt':
+            load_path += '.txt'
+        with open(load_path, 'r') as f:
+            return f.read()
+        
+    def add_incontext_examples(self, plan_text, executed, sentence_model, corrections_example_embedding, corrections_example_paths, device, top_k_similar, curr_step):
+
+        if executed:
+            return plan_text
+        
+        else:
+
+            contextualized_text = self.context_transformation(plan_text)
+
+            target_error_step = contextualized_text.split('\n')[-2].split(':')[1].strip().lower()
+
+            target_task = contextualized_text.split('\n')[0].split(':')[1].strip().lower()
+
+            most_similar_example_idxs, ____ = top_k_similar(sentence_model, target_error_step, corrections_example_embedding, device, top_k=2)
+
+            for id in reversed(most_similar_example_idxs):
+
+                example_correction = self.load_txt(corrections_example_paths[id]).split('\n\n')[1]
+
+                example_correction = example_correction.split('\n')
+                example_correction = '\n'.join(example_correction[:-5] + example_correction[-2:])
+
+                contextualized_text =  example_correction + '\n'+'-'*20+'\n' + contextualized_text
+
+            return contextualized_text + '\nStep {}:'.format(curr_step+1)
+
+
+
+
+class PromptGenerator(PromptContext):
 
     def __init__(self, prompt_args):
 
-        self.fixed = prompt_args['fixed']
-        self.question = prompt_args['question']
+        (self.prompt_template, self.prompt_inputs) = prompt_templates[prompt_args['prompt_template']]
 
-        self.prompt_template = 'Error: {}. A correct step would be:'
-        self.corrective_prompt = 'task failed'
 
-    def _nogen_error_prompt(self, nogen_error, best_curr, translated_action):
+        self.error_information = error_provided[prompt_args['error_information']]
+        self.error_info_type = prompt_args['error_information']
+        self.suggestion = suggestion_provided[prompt_args['suggestion_no']]
+
+        self.error_parser = ErrorParsing(prompt_args['custom_cause'], prompt_args['third_person'], prompt_args['chosen_causal_reprompts'])
+
+        super(PromptGenerator, self).__init__(prompt_args['chosen_context'])
+
+
+
+
+    
+    def _create_inference2_prompt(self, **kwargs):
+        return self.error_information.format(kwargs['action'], kwargs['obj'])
+    
+    def _create_inference1_prompt(self, **kwargs):
+        return self.error_information.format(kwargs['best_curr'].lower())
+    
+    def _create_notion_prompt(self, **kwargs):
+        return self.error_information
+    
+    def _create_cause1_prompt(self, **kwargs):
+        return self.error_information.format(kwargs['error_cause'])
+    
+    def _create_cause2_prompt(self, **kwargs):
+        return self.error_information.format(kwargs['action'], kwargs['obj'], kwargs['error_cause'])
+    
+    def _create_emptyprogram_prompt(self):
+        return 'generate a list of steps'
+    
+    def _create_parsibility_prompt(self):
+        return 'generate a list of steps'
+    def _cerate_nogen_prompt(self,**kwargs):
         pass
 
-    def _parsing_error_prompt(self, parsing_error, best_curr, translated_action):
-        pass
+    def generate_prompt_robot(self, error_type, obj, action, step, best_curr, program_line, *args):
 
+        generator_functions = {'inference_1': self._create_inference1_prompt, 'inference_2': self._create_inference2_prompt, 
+        'notion': self._create_notion_prompt,
+        'cause_1': self._create_cause1_prompt, 
+        'cause_2': self._create_cause2_prompt}
 
-    def _empty_program_prompt(self, empty_program_error, best_curr, translated_action):
-        pass
-
-
-    def _precond_error_prompt(self, precond_error, best_curr, translated_action):
-        pass
-
-    def _check_script_error_prompt(self, executability_error, best_curr, translated_action):
-        pass
-
-    def generate_prompt(self, error_type, error_message, step, best_curr, translated_action):
-
-        #fixed corrective prompt i.e. not unique based on error type
-        if self.fixed:
-            corrective_prompt = self.corrective_prompt
-
-        #customized error message based on error type
+        #format the error information for the prompt template
+        if error_type == 'empty_program':
+            error_info = self._create_emptyprogram_prompt()
         else:
+            error_cause = self.error_parser._get_error_reason(None, error_type, args, obj, action)
 
-            prompt_functions = {'parsibility': self._parsing_error_prompt, 'empty_program': self._empty_program_prompt, 'precond': self._precond_error_prompt, 'check_script':self._check_script_error_prompt, 'nogen':self._nogen_error_prompt }
+            error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
+        
+        all_prompt_inputs = {'step_no': step, 'error_info': error_info, 'suggestion': self.suggestion}
+        prompt_inputs = [all_prompt_inputs[i] for i in self.prompt_inputs]
 
-            corrective_prompt = prompt_functions[error_type](error_message, best_curr, translated_action)
+        return self.prompt_template.format(*prompt_inputs).replace('  ',' ')
 
 
-        return self.prompt_template.format(corrective_prompt)
+
+    def generate_prompt(self, error_type, error_message, step, best_curr, program_line, *args):
+
+        generator_functions = {'inference_1': self._create_inference1_prompt, 'inference_2': self._create_inference2_prompt, 
+        'notion': self._create_notion_prompt,
+        'cause_1': self._create_cause1_prompt, 
+        'cause_2': self._create_cause2_prompt}
+
+        
+
+        #extract the action and object causing error from program line
+        action, obj = self.error_parser._get_action_and_objs(program_line)
+        action = action.strip().lower()
+        obj = obj.strip().lower()
+
+        #format the error information for the prompt template
+        if error_type == 'empty_program':
+            error_info = self._create_emptyprogram_prompt()
+        if error_type == 'parsibility':
+            error_info = self._create_parsibility_prompt()
+        else:
+            #extract the cause for the error
+            error_cause = self.error_parser._get_error_reason(error_message, error_type, args, obj, action)
+
+            error_info = generator_functions[self.error_info_type](**{'obj':obj, 'action':action, 'error_cause': error_cause, 'best_curr': best_curr})
+
+        all_prompt_inputs = {'step_no': step, 'error_info': error_info, 'suggestion': self.suggestion}
+        prompt_inputs = [all_prompt_inputs[i] for i in self.prompt_inputs]
+
+        #format the final error prompt template: output varies based on prompt inserts
+        return self.prompt_template.format(*prompt_inputs).replace('  ',' ')
+       
+
+
+
+       
+
+        

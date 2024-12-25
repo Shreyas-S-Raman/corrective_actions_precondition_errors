@@ -1,0 +1,14 @@
+Type: not-holding
+Failed Step: Read homework
+
+Task: Homework
+Step 1: Walk to home office
+Step 2: Walk to desk
+Step 3: Find homework
+Step 4: Turn to homework
+Step 5: Read homework
+Error Object: homework
+Error Type: not holding object
+Skip: False
+Error: I am not holding the homework. A correct step would be to
+Step 5: Grab homework

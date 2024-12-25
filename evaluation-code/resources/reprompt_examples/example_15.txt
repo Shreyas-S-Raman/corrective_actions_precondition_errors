@@ -1,0 +1,11 @@
+Type: not holding
+Failed Step: Put on glasses
+
+Task: Put on glasses
+Step 1: Find glasses
+Step 2: Put on glasses
+Error Object: glasses
+Error Type: not holding object
+Skip: False
+Error: I am not holding the glasses. A correct step would be to
+Step 2: Grab glasses

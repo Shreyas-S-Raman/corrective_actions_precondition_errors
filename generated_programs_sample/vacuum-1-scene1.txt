@@ -1,0 +1,8 @@
+[WALK] <home_office> (1)
+[WALK] <closet> (1)
+[OPEN] <closet> (1)
+[FIND] <vacuum_cleaner> (1)
+[GRAB] <vacuum_cleaner> (1)
+[PULL] <vacuum_cleaner> (1)
+[PLUGIN] <vacuum_cleaner> (1)
+[SWITCHON] <vacuum_cleaner> (1)

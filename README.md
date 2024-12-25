@@ -1,46 +1,38 @@
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huangwl18/language-planner/blob/main/src/demo.ipynb)
-## Language Models as Zero-Shot Planners:<br>Extracting Actionable Knowledge for Embodied Agents
+## CAPE: Corrective Actions from Precondition Errors using Large Language Models
 
-#### [[Project Page]](https://huangwl18.github.io/language-planner/) [[Paper]](https://arxiv.org/pdf/2201.07207.pdf) [[Video]](https://www.youtube.com/watch?v=CkyugWI3_fc)
+#### [[Project Page]](https://shreyas-s-raman.github.io/CAPE/) [[Paper]](https://ieeexplore.ieee.org/abstract/document/10611376) [[ArXiV]](https://arxiv.org/abs/2211.09935)
 
-[Wenlong Huang](https://wenlong.page)<sup>1</sup>, [Pieter Abbeel](http://people.eecs.berkeley.edu/~pabbeel/)<sup>1</sup>, [Deepak Pathak](https://www.cs.cmu.edu/~dpathak/)\*<sup>2</sup>, [Igor Mordatch](https://scholar.google.com/citations?user=Vzr1RukAAAAJ&hl=en)\*<sup>3</sup> (*equal advising)
+[Shreyas S Raman](https://shreyasraman.netlify.app/)<sup>1</sup>, [Vanya Cohen](https://www.cs.utexas.edu/~ai-lab/people-view.php?PID=553)<sup>2</sup>, [Ifrah Idrees](https://scholar.google.com/citations?user=OM1hDLcAAAAJ&hl=en)<sup>1</sup>, [Eric Rosen](https://eric-rosen.github.io/)<sup>1</sup>, [Raymond J Mooney](https://www.cs.utexas.edu/~mooney/)<sup>2</sup>, [David Paulius](https://davidpaulius.github.io/)<sup>1</sup>, , [Stefanie Tellex](https://vivo.brown.edu/display/stellex)<sup>1</sup>
 
-<sup>1</sup>University of California, Berkeley, <sup>2</sup>Carnegie Mellon University, <sup>3</sup>Google Brain<br/>
+<sup>1</sup>Brown University, <sup>2</sup>The University of Texas Austin<br/>
 
-<img  src="images/action-translation.gif" width="550">
+<img  src="images/main_figure.png" width="750">
 
-This is the official demo code for our [Language Models as Zero-Shot Planners](https://huangwl18.github.io/language-planner/) paper. The code demonstrates how Large Language Models, such as GPT-3 and Codex, can generate action plans for complex human activities (e.g. "make breakfast"), even without any further training. The code can be used with any available language models from [OpenAI API](https://openai.com/api/) and [Huggingface Transformers](https://huggingface.co/docs/transformers/index) with a common interface.
+This is the official code for our [CAPE: Corrective Actions from Precondition Errors using Large Language Models](https://shreyas-s-raman.github.io/CAPE/) paper. Our explicit prompting approach enables embodied LLM agents to generate plans for for complex tasks (e.g. "make breakfast") that are more semantically correct and executable whilst minimizing re-prompting -- without requiring any fine-tuning. The code can be used with any available language models from [OpenAI API](https://openai.com/api/) and [Huggingface Transformers](https://huggingface.co/docs/transformers/index) with a common interface.
+
 
 If you find this work useful in your research, please cite using the following BibTeX:
 
 ```bibtex
-@article{huang2022language,
-      title={Language Models as Zero-Shot Planners: Extracting Actionable Knowledge for Embodied Agents},
-      author={Huang, Wenlong and Abbeel, Pieter and Pathak, Deepak and Mordatch, Igor},
-      journal={arXiv preprint arXiv:2201.07207},
-      year={2022}
+@inproceedings{raman2024cape,
+      title={{CAPE: Corrective Actions from Precondition Errors using Large Language Models}},
+      author={Sundara Raman, Shreyas and Cohen, Vanya and Paulius, David and Idrees, Ifrah and Rosen, Eric and Mooney, Ray and Tellex, Stefanie},
+      booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)},
+      year={2024},
+      note={(In Review)}
     }
 ```
 
-## Local Setup or [Open in Colab](https://colab.research.google.com/github/huangwl18/language-planner/blob/main/src/demo.ipynb)
-
-### Requirements
-- Python=3.6.13
-- CUDA=11.3
-
 ### Setup Instructions
 ```Shell
-git clone https://github.com/huangwl18/language-planner.git
+git clone git@github.com:Shreyas-S-Raman/corrective_actions_precondition_errors.git
 cd language-planner/
-conda create --name language-planner-env python=3.6.13
-conda activate language-planner-env
+conda create --name cape-env python=3.6.13
+conda activate cape-env
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Running Code
-
-See [`demo.ipynb`](https://github.com/huangwl18/language-planner/blob/main/src/demo.ipynb) (or [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huangwl18/language-planner/blob/main/src/demo.ipynb)) for a complete walk-through of our method. Feel free to experiment with any household tasks that you come up with (or any tasks beyond household domain if you provide necessary actions in [`available_actions.json`](https://github.com/huangwl18/language-planner/blob/main/src/available_actions.ipynb))!
 
 **Note:**
 - It is observed that best results can be obtained with larger language models. If you cannot run [Huggingface Transformers](https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads) models locally or on Google Colab due to memory constraint, it is recommended to register an [OpenAI API](https://openai.com/api/) account and use GPT-3 or Codex (As of 01/2022, $18 free credits are awarded to new accounts and Codex series are free after [admitted from the waitlist](https://share.hsforms.com/1GzaACuXwSsmLKPfmphF_1w4sk30?)).

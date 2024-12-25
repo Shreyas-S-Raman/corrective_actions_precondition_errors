@@ -1,0 +1,10 @@
+Type: unflipped-boolean-state
+Failed Step: Open door
+
+Task: Answer door
+Step 1: Run to home office
+Step 2: Open door
+Error Object: door
+Error Type: object is already open
+Skip: True
+Step 2: Look at door

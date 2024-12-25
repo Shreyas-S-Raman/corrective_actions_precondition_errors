@@ -1,3 +1,4 @@
+import pdb
 import time
 import queue
 from typing import Optional
@@ -13,10 +14,23 @@ class ExecutionInfo(object):
 
     def __init__(self):
         self.messages = []
+        self.message_params = []
         self.current_line = None
 
-    def error(self, msg: str, *args):
-        self.messages.append(msg.format(*args) + ' when executing "' + self.current_line_info() + '"')
+    def error(self, msg: str, err_type:str, error_params):
+
+        params = tuple(error_params.values())[:-1] if 'error_state' not in error_params else tuple(error_params.values())[:-2]
+
+        self.messages.append(msg.format(*params) + ' when executing "' + self.current_line_info() + '"')
+        
+        
+        for k in error_params:
+            error_params[k] = '{}'.format(*(error_params[k],))
+        
+        
+        error_params['type'] = err_type
+        self.message_params.append(error_params)
+
 
     def set_current_line(self, sl: ScriptLine):
         self.current_line = sl
@@ -33,6 +47,9 @@ class ExecutionInfo(object):
 
     def get_error_string(self):
         return ','.join(self.messages)
+    
+    def get_error_params(self):
+        return self.message_params
 
 
 # ActionExecutor-s
@@ -110,7 +127,7 @@ class WalkExecutor(ActionExecutor):
     def check_walk(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if State.SITTING in char_node.states or State.LYING in char_node.states:
-            info.error('{} is sitting', char_node)
+            info.error('{} is sitting', 'already_sitting', {'character': char_node, 'subtype':None})
             return False
         
         char_room = _get_room_node(state, char_node)
@@ -130,13 +147,13 @@ class WalkExecutor(ActionExecutor):
         closed_doors = _check_closed_doors(state, char_room, node_room)
 
         if closed_doors is None:
-            info.error('No path between between {} and {}', char_room, node_room)
+            info.error('No path between between {} and {}', 'no_path', {'char_room':char_room, 'target_room': node_room, 'subtype':None})
             return False
         if len(closed_doors) > 0:
             # walk to the nearest closed door is fine
             if node.id != closed_doors[-1].id:
-                info.error("Door(s) {} between {} and {} is (are) closed", ', '.join([str(d) for d in closed_doors]),
-                            char_room, node_room)
+                info.error("Door(s) {} between {} and {} is (are) closed", 'door_closed', {'door_list':', '.join([str(d) for d in closed_doors]), 'char_room':
+                            char_room, 'target_room': node_room, 'subtype': None})
                 return False
 
         return True
@@ -162,7 +179,7 @@ class _FindExecutor(ActionExecutor):
     def check_find(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         if not _is_character_close_to(state, node):
             char_node = _get_character_node(state)
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         
         return True
@@ -191,7 +208,7 @@ class FindExecutor(ActionExecutor):
                 return _only_find_executor.execute(script, state, info)
             else:
                 return _walk_find_executor.execute(script, state, info)
-        info.error('Could not find object {}'.format(current_obj.name))
+        info.error('Could not find object {}'.format(current_obj.name), 'not_find', {'obj':current_obj.name, 'subtype':None})
 
 
 class GreetExecutor(ActionExecutor):
@@ -208,7 +225,7 @@ class GreetExecutor(ActionExecutor):
 
     def check_if_person(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         if Property.PERSON not in node.properties:
-            info.error('{} is not person', node)
+            info.error('{} is not person', 'invalid_action', {'obj':node, 'subtype':'not a person'})
             return False
         return True
 
@@ -248,18 +265,18 @@ class SitExecutor(ActionExecutor):
         char_node = _get_character_node(state)
 
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         if State.SITTING in char_node.states:
-            info.error('{} is sitting', char_node)
+            info.error('{} is sitting', 'already_sitting', {'character': char_node, 'subtype':None})
             return False
         if Property.SITTABLE not in node.properties:
-            info.error('{} is not sittable', node)
+            info.error('{} is not sittable', 'invalid_action', {'obj':node,'subtype': 'not sittable'})
             return False
         max_occupancy = self._MAX_OCCUPANCIES.get(node.class_name, 1)
         if state.evaluate(CountRelations(AnyNode(), Relation.ON, NodeInstanceFilter(node),
                                          min_value=max_occupancy)):
-            info.error('Too many things on {}', node)
+            info.error('Too many things on {}', 'max_occupancy', {'obj': node, 'subtype':None})
             return False
 
         return True
@@ -276,7 +293,7 @@ class StandUpExecutor(ActionExecutor):
             new_char_node.states.discard(State.LYING)
             yield state.change_state([ChangeNode(new_char_node)])
         else:
-            info.error('{} is not sitting', char_node)
+            info.error('{} is not sitting', 'missing_step', {'character': char_node,'subtype':'not sitting'})
             
 
 class GrabExecutor(ActionExecutor):
@@ -304,19 +321,19 @@ class GrabExecutor(ActionExecutor):
 
     def check_grabbable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo) -> Optional[Relation]:
         if Property.GRABBABLE not in node.properties and node.class_name not in ['water', 'child']:
-            info.error('{} is not grabbable', node)
+            info.error('{} is not grabbable', 'invalid_action', {'obj':node,'subtype':'not grabbale'})
             return None
         if not _is_character_close_to(state, node):
             char_node = _get_character_node(state)
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character':char_node, 'obj':node, 'subtype':None})
             return None
         if _is_inside(state, node):
-            info.error('{} is inside other closed thing', node)
+            info.error('{} is inside other closed thing', 'internally_contained', {'obj':node, 'subtype':None})
             return None
         new_relation = _find_free_hand(state)
         if new_relation is None:
             char_node = _get_character_node(state)
-            info.error('{} does not have a free hand', char_node)
+            info.error('{} does not have a free hand', 'hands_full', {'character':char_node, 'subtype':None})
             return None
         return new_relation
 
@@ -331,6 +348,7 @@ class OpenExecutor(ActionExecutor):
         self.close = close
 
     def execute(self, script: Script, state: EnvironmentState, info: ExecutionInfo):
+        
         current_line = script[0]
         info.set_current_line(current_line)
         node = state.get_state_node(current_line.object())
@@ -345,26 +363,28 @@ class OpenExecutor(ActionExecutor):
     def check_openable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         
         if Property.CAN_OPEN not in node.properties and node.class_name not in ["desk", "window"]:
-            info.error('{} can not be opened', node)
+            info.error('{} can not be opened', 'invalid_action', {'obj':node,'subtype':'not openable'})
             return False
 
         if not _is_character_close_to(state, node):
             char_node = _get_character_node(state)
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         
         if not self.close and _find_free_hand(state) is None:
             char_node = _get_character_node(state)
-            info.error('{} does not have a free hand', char_node)
+            info.error('{} does not have a free hand', 'hands_full', {'character': char_node, 'subtype':None})
             return False
 
         s = State.OPEN if self.close else State.CLOSED
+        s_err = State.CLOSED if self.close else State.OPEN
+
         if s not in node.states:
-            info.error('{} is not {}', node, s.name.lower())
+            info.error('{} is not {}', 'unflipped_boolean_state', {'obj': node, 'state' : s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
 
         if not self.close and State.ON in node.states:
-            info.error('{} is still on'.format(node))
+            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node,'state':'on', 'error_state':'on', 'subtype':None})
             return False
         return True
 
@@ -406,7 +426,8 @@ class PutBackExecutor(ActionExecutor):
         else:
             (dest_node, relation) = state.executor_data.get((Action.GRAB, src_node.id), (None, None))
             if dest_node is None:
-                info.error('{} not grabbed', src_node)
+                char_node = _get_character_node(state)
+                info.error('{} not grabbed', 'not_holding', {'character': char_node,'obj':src_node, 'subtype':None})
             else:
                 dest_node = state.get_node(dest_node.id)
                 if _check_puttable(state, src_node, dest_node, relation, info):
@@ -424,17 +445,17 @@ def _check_puttable(state: EnvironmentState, src_node: GraphNode, dest_node: Gra
     hand_rel = _find_holding_hand(state, src_node)
     if hand_rel is None:
         char_node = _get_character_node(state)
-        info.error('{} is not holding {}', char_node, src_node)
+        info.error('{} is not holding {}', 'not_holding', {'character': char_node, 'obj':src_node, 'subtype':None})
         return False
     if not _is_character_close_to(state, dest_node):
         char_node = _get_character_node(state)
-        info.error('{} is not close to {}', char_node, dest_node)
+        info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj':dest_node, 'subtype':None})
         return False
     if relation == Relation.INSIDE:
         if Property.CAN_OPEN not in dest_node.properties or State.OPEN in dest_node.states:
             return True
         else:
-            info.error('{} is not open or is not openable', dest_node)
+            info.error('{} is not open or is not openable', 'invalid_action', {'obj' : dest_node, 'subtype': 'is not openable'})
             return False
     return True
 
@@ -462,21 +483,22 @@ class SwitchExecutor(ActionExecutor):
 
     def check_switchable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         s = State.OFF if self.switch_on else State.ON
+        s_err = State.ON if self.switch_on else State.OFF
 
         if Property.HAS_SWITCH not in node.properties:
-            info.error('{} does not have a switch', node)
+            info.error('{} does not have a switch', 'invalid_action', {'obj': node, 'subtype':'does not have a switch'})
             return False
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character' : _get_character_node(state), 'obj' : node, 'subtype':None})
             return False
         #if _find_free_hand(state) is None:
         #    info.error('{} does not have a free hand', _get_character_node(state))
         #    return False
         if s not in node.states:
-            info.error('{} is not {}', node, s.name.lower())
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj' : node, 'state': 'not' + s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
         if self.switch_on and State.PLUGGED_OUT in node.states:
-            info.error('{} is unplugged', node)
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'unplugged', 'error_state': 'unplugged', 'subtype':None})
             return False
         return True
 
@@ -494,11 +516,11 @@ class DrinkExecutor(ActionExecutor):
 
     def check_drinkable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         if Property.DRINKABLE not in node.properties and Property.RECIPIENT not in node.properties:
-            info.error('{} is not drinkable or not recipient', node)
+            info.error('{} is not drinkable or not recipient', 'invalid_action', {'obj': node, 'subtype': 'not drinkable'})
             return False
         hand_rel = _find_holding_hand(state, node)
         if hand_rel is None:
-            info.error('{} is not holding {}', _get_character_node(state), node)
+            info.error('{} is not holding {}', 'not_holding', {'character':_get_character_node(state),'obj': node, 'subtype':None})
             return False
         return True
 
@@ -535,7 +557,7 @@ class LookAtExecutor(ActionExecutor):
     def check_lookat(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if not _is_character_face_to(state, node):
-            info.error('{} does not face {}', char_node, node)
+            info.error('{} does not face {}', 'not_facing', {'character':char_node, 'obj':node, 'subtype':None})
             return False
 
         return True
@@ -559,7 +581,7 @@ class WipeExecutor(ActionExecutor):
         char_node = _get_character_node(state)
 
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj':node, 'subtype':None})
             return False
 
         #if Property.SURFACES not in node.properties:
@@ -568,7 +590,7 @@ class WipeExecutor(ActionExecutor):
 
         nodes_in_hands = _find_nodes_from(state, char_node, [Relation.HOLDS_RH, Relation.HOLDS_LH])
         if len(nodes_in_hands) == 0:
-            info.error('{} does not hold anything in hands', char_node)
+            info.error('{} does not hold anything in hands', 'not_holding_any', {'character': char_node, 'subtype':None})
             return 
 
         return True
@@ -593,10 +615,10 @@ class PutOnExecutor(ActionExecutor):
         nodes_in_hands = _find_nodes_from(state, char_node, relations=[Relation.HOLDS_LH, Relation.HOLDS_RH])
         
         if not any([n.id == node.id for n in nodes_in_hands]):
-            info.error('{} is not holding {}', char_node, node)
+            info.error('{} is not holding {}', 'not_holding', {'character' : char_node, 'obj': node, 'subtype':None})
             return False
         if Property.CLOTHES not in node.properties:
-            info.error('{} is not clothes', node)
+            info.error('{} is not clothes', 'invalid_action', {'obj': node, 'subtype':'not clothes'})
             return False
 
         return True
@@ -618,10 +640,10 @@ class PutOffExecutor(ActionExecutor):
     def check_putoff(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if not state.evaluate(ExistsRelation(NodeInstance(node), Relation.ON, NodeInstanceFilter(char_node))):
-            info.error('{} is not on {}', node, char_node)
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': node, 'state': 'not on' + char_node.class_name, 'error_state':  'off me', 'subtype':None})
             return False
         if Property.CLOTHES not in node.properties:
-            info.error('{} is not clothes', node)
+            info.error('{} is not clothes', 'invalid_action', {'obj': node, 'subtype': 'not clothes'})
             return False
         return True
 
@@ -647,7 +669,7 @@ class DropExecutor(ActionExecutor):
         char_node = _get_character_node(state)
         nodes_in_hands = _find_nodes_from(state, char_node, relations=[Relation.HOLDS_LH, Relation.HOLDS_RH])
         if not any([n.id == node.id for n in nodes_in_hands]):
-            info.error('{} is not holding {}', char_node, node)
+            info.error('{} is not holding {}', 'not_holding', {'character': char_node, 'obj': node, 'subtype':None})
             return False
 
         return True
@@ -666,11 +688,11 @@ class ReadExecutor(ActionExecutor):
 
     def check_readable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         if Property.READABLE not in node.properties:
-            info.error('{} is not readable', node)
+            info.error('{} is not readable', 'invalid_action', {'obj':node, 'subtype': 'not readable'})
             return False
         hand_rel = _find_holding_hand(state, node)
         if hand_rel is None:
-            info.error('{} is not holding {}', _get_character_node(state), node)
+            info.error('{} is not holding {}', 'not_holding', {'character': _get_character_node(state), 'obj': node, 'subtype':None})
             return False
         return True
 
@@ -688,10 +710,10 @@ class TouchExecutor(ActionExecutor):
 
     def check_reachable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character': _get_character_node(state), 'obj': node, 'subtype':None})
             return False
         if _is_inside(state, node):
-            info.error('{} is inside other closed thing', node)
+            info.error('{} is inside other closed thing', 'internally_contained', {'obj': node, 'subtype':None})
             return False
         return True
 
@@ -726,18 +748,18 @@ class LieExecutor(ActionExecutor):
     def check_lieable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         char_node = _get_character_node(state)
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         if State.LYING in char_node.states:
-            info.error('{} is lying', char_node)
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj': char_node, 'state':'lying down', 'error_state':'lying down', 'subtype':None})
             return False
         if Property.LIEABLE not in node.properties:
-            info.error('{} is not lieable', node)
+            info.error('{} is not lieable', 'invalid_action', {'obj': node, 'subtype': 'lie down'})
             return False
         max_occupancy = self._MAX_OCCUPANCIES.get(node.class_name, 1)
         if state.evaluate(CountRelations(AnyNode(), Relation.ON, NodeInstanceFilter(node),
                                          min_value=max_occupancy)):
-            info.error('Too many things on {}', node)
+            info.error('Too many things on {}', 'max_occupancy', {'obj':node, 'subtype':None})
             return False
         return True
 
@@ -761,21 +783,21 @@ class PourExecutor(ActionExecutor):
     def _check_pourable(self, state: EnvironmentState, src_node: GraphNode, dest_node: GraphNode, info: ExecutionInfo):
 
         if Property.POURABLE not in src_node.properties and Property.DRINKABLE not in src_node.properties:
-            info.error('{} is not pourable or drinkable', src_node)
+            info.error('{} is not pourable or drinkable', 'invalid_action', {'obj':src_node, 'subtype':'cannot be poured'})
             return False
 
         if Property.RECIPIENT not in dest_node.properties and dest_node.class_name not in ["hands_both", "sponge", "face"]:
-            info.error('{} is not recipient', dest_node)
+            info.error('{} is not recipient', 'invalid_action', {'obj':dest_node, 'subtype': 'is not recipient'})
             return False
 
         hand_rel = _find_holding_hand(state, src_node)
         if hand_rel is None:
-            info.error('{} is not holding {}', _get_character_node(state), src_node)
+            info.error('{} is not holding {}', 'not_holding', {'character':_get_character_node(state), 'obj':src_node, 'subtype':None})
             return False
 
         char_node = _get_character_node(state)
         if not _is_character_close_to(state, dest_node):
-            info.error('{} is not close to {}', char_node, dest_node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj':dest_node, 'subtype':None})
             return False
         
         return True
@@ -796,14 +818,14 @@ class TypeExecutor(ActionExecutor):
         char_node = _get_character_node(state)
 
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj': node, 'subtype':None})
             return False
         
         if node.class_name == 'keyboard':
             return True
 
         if Property.HAS_SWITCH not in node.properties:
-            info.error('{} does not have switch', node)
+            info.error('{} does not have switch', 'invalid_action', {'obj': node, 'subtype':'does not have a switch'})
             return False
         
         return True
@@ -826,19 +848,19 @@ class WatchExecutor(ActionExecutor):
         node_room = _get_room_node(state, node)
         
         if Property.LOOKABLE not in node.properties:
-            info.error('{} not lookable', node)
+            info.error('{} not lookable', 'invalid_action', {'obj':node, 'subtype':'cannot be looked at'})
             return False
         if node_room.id != char_room.id:
-            info.error('char room {} is not node room {}', char_room, node_room)
+            info.error('char room {} is not node room {}', 'invalid_room', {'char_room': char_room, 'target_room': node_room, 'subtype':None})
             return False
         if not _is_character_face_to(state, node):
-            info.error('{} does not face {}', char_node, node)
+            info.error('{} does not face {}', 'not_facing', {'character': char_node, 'obj':node, 'subtype':None})
             return False
         if node.class_name != 'computer' and (State.SITTING in char_node.states or State.LYING in char_node.states) and not state.evaluate(ExistsRelation(CharacterNode(), Relation.FACING, NodeInstanceFilter(node))):
-            info.error('{} is not facing {} while sitting', char_node, node)
+            info.error('{} is not facing {} while sitting', 'not_facing', {'character':char_node, 'obj':node, 'subtype':None})
             return False
         if _is_inside(state, node):
-            info.error('{} is inside other closed thing', node)
+            info.error('{} is inside other closed thing', 'internally_contained', {'obj':node, 'subtype':None})
         return True
 
 
@@ -859,19 +881,19 @@ class MoveExecutor(ActionExecutor):
     def check_movable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo, action_name: str) -> Optional[Relation]:
 
         if Property.MOVABLE not in node.properties and (action_name != 'push' and node.class_name != 'button') and node.class_name not in ['chair', 'curtain']:
-            info.error('{} is not movable', node)
+            info.error('{} is not movable', 'invalid_action', {'obj':node,'subtype': 'not movable'})
             return None
         if not _is_character_close_to(state, node):
             char_node = _get_character_node(state)
-            info.error('{} is not close to {}', char_node, node)
+            info.error('{} is not close to {}', 'proximity', {'character': char_node, 'obj':node, 'subtype':None})
             return None
         if _is_inside(state, node):
-            info.error('{} is inside other closed thing', node)
+            info.error('{} is inside other closed thing', 'internally_contained', {'obj':node, 'subtype':None})
             return None
         new_relation = _find_free_hand(state)
         if new_relation is None:
             char_node = _get_character_node(state)
-            info.error('{} does not have a free hand', char_node)
+            info.error('{} does not have a free hand', 'hands_full', {'character':char_node, 'subtype':None})
             return None
         return new_relation
 
@@ -893,7 +915,7 @@ class WashExecutor(ActionExecutor):
     def check_washable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character':_get_character_node(state), 'obj':node, 'subtype':None})
             return False
 
         return True
@@ -913,17 +935,17 @@ class SqueezeExecutor(ActionExecutor):
     def check_squeezable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         
         if _find_free_hand(state) is None:
-            info.error('{} does not have a free hand', _get_character_node(state))
+            info.error('{} does not have a free hand', 'hands_full', {'character':_get_character_node(state), 'subtype':None})
             return False
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity',{'character':_get_character_node(state), 'obj':node, 'subtype':None})
             return False
 
         squeezable_objects = ['cleaning_solution', 'tooth_paste', 'shampoo', 
                 'food_peanut_butter', 'dish_soap', 'soap', 'towel', 'rag', 'paper', 'sponge', 
                 'food_lemon', 'check']
         if Property.CLOTHES not in node.properties and node.class_name not in squeezable_objects:
-            info.error('{} is not clothes', node)
+            info.error('{} is not clothes', 'invalid_action', {'obj':node,'subtype':'not a piece of clothing'})
             return False
 
         return True
@@ -952,20 +974,22 @@ class PlugExecutor(ActionExecutor):
 
     def check_plugable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
         s = State.PLUGGED_OUT if self.plug_in else State.PLUGGED_IN
+        s_err = State.PLUGGED_IN if self.plug_in else State.PLUGGED_OUT
+
         if Property.HAS_PLUG not in node.properties:
-            info.error('{} does not have a plug', node)
+            info.error('{} does not have a plug', 'invalid_action', {'obj':node,'subtype':'does not have a plug'})
             return False
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character':_get_character_node(state), 'obj':node, 'subtype':None})
             return False
         if _find_free_hand(state) is None:
-            info.error('{} does not have a free hand', _get_character_node(state))
+            info.error('{} does not have a free hand', 'hands_full', {'character':_get_character_node(state), 'subtype':None})
             return False
         if s not in node.states:
-            info.error('{} is not {}', node, s.name.lower())
+            info.error('{} is {}', 'unflipped_boolean_state', {'obj':node, 'state': 'not' + s.name.lower(), 'error_state': s_err.name.lower(), 'subtype':None})
             return False
         if not self.plug_in and State.ON in node.states:
-            info.error('{} is still on', node)
+            info.error('{} is still {}', 'unflipped_boolean_state', {'obj':node, 'state':'on', 'error_state':'on', 'subtype':None})
         return True
     
 
@@ -983,22 +1007,22 @@ class CutExecutor(ActionExecutor):
     def check_cuttable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
 
         if _find_free_hand(state) is None:
-            info.error('{} does not have a free hand', _get_character_node(state))
+            info.error('{} does not have a free hand', 'hands_full', {'character':_get_character_node(state), 'subtype':None})
             return False
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character':_get_character_node(state), 'obj':node, 'subtype':None})
             return False
         if Property.EATABLE not in node.properties:
-            info.error('{} is not eatable', node)
+            info.error('{} is not eatable', 'invalid_action', {'obj':node, 'subtype':'not eatable'})
             return False
         if Property.CUTTABLE not in node.properties:
-            info.error('{} is not cuttable', node)
+            info.error('{} is not cuttable', 'invalid_action', {'obj':node, 'subtype':'not cuttable'})
             return False
 
         char_node = _get_character_node(state)
         holding_nodes = _find_nodes_from(state, char_node, [Relation.HOLDS_LH, Relation.HOLDS_RH])
         if not any(['knife' in node.class_name for node in holding_nodes]):
-            info.error('{} is not holding a knife', _get_character_node(state))
+            info.error('{} is not holding a {}', 'not_holding', {'character':_get_character_node(state), 'obj':'knife', 'subtype':None})
             return False
 
         return True
@@ -1018,7 +1042,7 @@ class EatExecutor(ActionExecutor):
     def check_eatable(self, state: EnvironmentState, node: GraphNode, info: ExecutionInfo):
 
         if not _is_character_close_to(state, node):
-            info.error('{} is not close to {}', _get_character_node(state), node)
+            info.error('{} is not close to {}', 'proximity', {'character':_get_character_node(state), 'obj':node, 'subtype':None})
             return False
             
         if Property.EATABLE in node.properties:
@@ -1026,12 +1050,12 @@ class EatExecutor(ActionExecutor):
         else:
             nodes_in_objs = _find_nodes_to(state, node, relations=[Relation.ON])
             if len(nodes_in_objs) == 0:
-                info.error('{} is not eatable', node)
+                info.error('{} is not eatable', 'invalid_action', {'obj':node,'subtype':'not eatable'})
                 return False
             elif any([Property.EATABLE in node.properties for node in nodes_in_objs]):
                 return True
             else:
-                info.error('none of object on {} is eatable', node)
+                info.error('none of object on {} is eatable', 'invalid_action',  {'obj':node, 'subtype':'not eatable'})
                 return False
 
 
@@ -1042,7 +1066,7 @@ class SleepExecutor(ActionExecutor):
         info.set_current_line(script[0])
         char_node = _get_character_node(state)
         if State.LYING not in char_node.states and State.SITTING not in char_node.states:
-            info.error('{} is not lying or sitting', char_node)
+            info.error('{} is not lying or sitting', 'missing_step', {'character': char_node, 'subtype': 'not lying down or sitting'})
         else:
             yield state.change_state([])
 
@@ -1054,7 +1078,7 @@ class WakeUpExecutor(ActionExecutor):
         info.set_current_line(script[0])
         char_node = _get_character_node(state)
         if State.LYING not in char_node.states and State.SITTING not in char_node.states:
-            info.error('{} is not lying or sitting', char_node)
+            info.error('{} is not lying or sitting', 'missing_step', {'character': char_node, 'subtype':'not lying down or sitting'})
         else:
             yield state.change_state([])
 
@@ -1304,12 +1328,12 @@ class ScriptExecutor(object):
             future_script = script.from_index(i)
             state = next(self.call_action_method(future_script, state, info), None)
             if state is None:
-                return False, prev_state, graph_state_list
+                return False, prev_state, graph_state_list, i
                 
         if w_graph_list:
             graph_state_list.append(state.to_dict())
 
-        return True, state, graph_state_list
+        return True, state, graph_state_list, len(script)
 
     @classmethod
     def call_action_method(cls, script: Script, state: EnvironmentState, info: ExecutionInfo):

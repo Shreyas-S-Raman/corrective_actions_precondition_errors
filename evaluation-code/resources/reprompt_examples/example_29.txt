@@ -1,0 +1,12 @@
+Type: unflipped-boolean-state
+Failed Step: Open cupboard
+
+Task: Cut bread
+Step 1: Walk to dining room
+Step 2: Walk to cupboard
+Step 3: Find cupboard
+Step 4: Open cupboard
+Error Object: cupboard
+Error Type: object is already open
+Skip: True
+Step 4: Grab bread

@@ -1,0 +1,14 @@
+Type: not-holding
+Failed Step: Put pen on paper
+
+Task: Write school paper
+Step 1: Walk to paper
+Step 2: Grab paper
+Step 3: Walk to pen
+Step 4: Walk to paper
+Step 5: Put pen on paper
+Error Object: pen
+Error Type: I am not holding the object
+Skip: False
+Error: I am not holding the pen. A correct step would be to
+Step 5: Grab pen

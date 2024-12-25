@@ -1,0 +1,14 @@
+Type: not-facing-object
+Failed Step: Look at drawing
+
+Task: Admire art
+Step 1: Walk to home office
+Step 2: Walk to wall
+Step 3: Walk to drawing
+Step 4: Find drawing
+Step 5: Look at drawing
+Error Object: drawing
+Error Type: not facing the object
+Skip: False
+Error: I am not facing the drawing. A correct step would be to
+Step 5: Turn to drawing

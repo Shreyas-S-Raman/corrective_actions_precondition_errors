@@ -1,0 +1,12 @@
+Type: door-closed
+Failed Step: Walk to home office
+
+Task: Close door
+Step 1: Walk to door
+Step 2: Close door
+Step 3: Walk to home office
+Error Object: door to home office
+Error Type: door between two rooms is closed
+Skip: False
+Error: The door to home office is closed. A correct step would be to
+Step 3: Open door

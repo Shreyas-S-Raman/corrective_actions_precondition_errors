@@ -1,0 +1,12 @@
+Type: unflipped-boolean-state
+Failed Step: Switch on computer
+
+Task: Write story
+Step 1: Walk to home office
+Step 2: Walk to desk
+Step 3: Find computer
+Step 4: Switch on computer
+Error Object: computer
+Error Type: object is already switched on
+Skip: True
+Step 4: Type on keyboard

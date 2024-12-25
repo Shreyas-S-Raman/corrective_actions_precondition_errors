@@ -5,6 +5,7 @@ from evolving_graph.environment import *
 from evolving_graph.execution import _get_room_node
 from evolving_graph.common import Error, TimeMeasurement
 
+random.seed(123)
 
 
 class StatePrepare(StateChanger):

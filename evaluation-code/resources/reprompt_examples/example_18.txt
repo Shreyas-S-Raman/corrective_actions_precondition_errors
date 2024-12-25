@@ -1,0 +1,16 @@
+Type: agent-proximity
+Failed Step: Switch on faucet
+
+Task: Shave
+Step 1: Walk to bathroom
+Step 2: Walk to sink
+Step 3: Find razor
+Step 4: Find soap
+Step 5: Find towel
+Step 6: Find mirror
+Step 7: Switch on faucet
+Error Object: faucet
+Error Type: not near the object
+Skip: False
+Error: I am not near the faucet. A correct step would be to
+Step 7: Walk to faucet

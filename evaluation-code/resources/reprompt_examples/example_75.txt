@@ -1,0 +1,18 @@
+Type: hands-full
+Failed Step: Grab bottle
+
+Task: Drink
+Step 1: Walk to dining room
+Step 2: Walk to sink
+Step 3: Find kitchen counter
+Step 4: Find cup
+Step 5: Grab cup
+Step 6: Grab coffee
+Step 7: Walk to freezer
+Step 8: Open freezer
+Step 9: Grab bottle
+Error Object: bottle
+Error Type: I have already grabbed cup and coffee. My hands are full
+Skip: False
+Error: I cannot grab bottle because my hands are full. A correct step would be to
+Step 9: Put cup on table

@@ -1,0 +1,14 @@
+Type: sitting-or-lying-down
+Failed Step: Put mail on table
+
+Task: Set mail on table
+Step 1: Find mail
+Step 2: Grab mail
+Step 3: Walk to table
+Step 4: Sit on chair
+Step 5: Put mail on table
+Error Object: none
+Error Type: I am not sitting or lying down
+Skip: False
+Error: I am sitting and need to stand up. A correct step would be to
+Step 5: Stand up

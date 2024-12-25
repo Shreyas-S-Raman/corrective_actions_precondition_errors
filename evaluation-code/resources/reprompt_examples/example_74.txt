@@ -1,0 +1,10 @@
+Type: not-facing-object
+Failed Step: Point at cat
+
+Task: Pick up cat hair
+Step 1: Point at cat
+Error Object: cat
+Error Type: not turned to face the object
+Skip: False
+Error: I am not turned to face the cat. A correct step would be to 
+Step 1: Turn to cat

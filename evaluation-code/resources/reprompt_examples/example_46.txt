@@ -1,0 +1,13 @@
+Type: not-facing-object
+Failed Step: Look at woman
+
+Task: Say goodbye to guests leaving
+Step 1: Run to home office
+Step 2: Walk to woman
+Step 3: Find woman
+Step 5: Look at woman
+Error Object: woman
+Error Type: not facing the object
+Skip: False
+Error: I am not facing the woman. A correct step would be to
+Step 5: Turn to woman

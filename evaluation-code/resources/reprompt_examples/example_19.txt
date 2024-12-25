@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Turking
+
+Task: Turking
+Error Object: None
+Error Type: no generated output
+Skip: False
+Error: How can I Turk? A correct step would be to
+Step 1: Walk to computer

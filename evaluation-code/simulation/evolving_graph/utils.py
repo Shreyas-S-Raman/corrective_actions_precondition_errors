@@ -9,7 +9,7 @@ from evolving_graph.execution import SitExecutor, LieExecutor
 
 
 random.seed(123)
-
+np.random.seed(123)
 
 def load_graph(file_name):
     with open(file_name) as f:
@@ -393,7 +393,7 @@ class graph_dict_helper(object):
         return random.choice(available_rooms)
 
     def modify_script_with_specified_id(self, script, id_mapping, room_mapping):
-
+        
         # change the id in script
         for script_line in script:
             for parameter in script_line.parameters:
@@ -419,8 +419,8 @@ class graph_dict_helper(object):
                             node["states"].remove("OFF")
                         on_off.set_node_state(node, "ON")
 
-    def add_missing_object_from_script(self, script, precond, graph_dict, id_mapping):
-
+    def add_missing_object_from_script(self, script, precond, graph_dict, id_mapping, room_mapping=None):
+        
         equivalent_rooms = self.equivalent_rooms
         possible_rooms = self.possible_rooms
 
@@ -431,16 +431,17 @@ class graph_dict_helper(object):
         available_name = list(set([node['class_name'] for node in available_nodes]))
 
         # create room mapping
-        room_mapping = {}
-        for room in possible_rooms:
-            nroom = room
-            rooms_tried = []
-            while nroom not in available_rooms_in_graph and nroom not in rooms_tried:
-                rooms_tried.append(nroom)
-                assert nroom in equivalent_rooms, "Not pre-specified mapping for room: {}".format(nroom)
-                nroom = equivalent_rooms[nroom]    
-            assert nroom in available_rooms_in_graph, "No equivalent room in graph for room: {}".format(nroom)
-            room_mapping[room] = nroom
+        if room_mapping is None:
+            room_mapping = {}
+            for room in possible_rooms:
+                nroom = room
+                rooms_tried = []
+                while nroom not in available_rooms_in_graph and nroom not in rooms_tried:
+                    rooms_tried.append(nroom)
+                    assert nroom in equivalent_rooms, "Not pre-specified mapping for room: {}".format(nroom)
+                    nroom = equivalent_rooms[nroom]    
+                assert nroom in available_rooms_in_graph, "No equivalent room in graph for room: {}".format(nroom)
+                room_mapping[room] = nroom
         
         # use room mapping to change the precond (in-place opetation)
         for precond_i in precond:
@@ -462,14 +463,19 @@ class graph_dict_helper(object):
                     first_room = parameter.name
 
         # initialize the `objects_in_script`
-        objects_in_script = {}
+        objects_in_script = {k:v for (k,v) in id_mapping.items()}
+        new_object_ids_in_script = []
         character_id = [i for i in filter(lambda v: v['class_name'] == 'character', graph_dict["nodes"])][0]["id"]
         key = ('character', 1)
         objects_in_script[key] = id_mapping[key] if key in id_mapping else character_id
 
         for key in script.obtain_objects():
+            if key not in objects_in_script and key not in id_mapping:
+                new_object_ids_in_script.append(key)
             if key not in objects_in_script:
                 objects_in_script[key] = id_mapping[key] if key in id_mapping else None
+
+            
 
         # set up the first room
         #location_precond = {tuple(i['location'][0]): i['location'][1][0] for i in filter(lambda v: 'location' in v, precond)}
@@ -531,9 +537,9 @@ class graph_dict_helper(object):
             for parameter in script_line.parameters:
                 parameter.instance = objects_in_script[(parameter.name, parameter.instance)]
                 
-        return objects_in_script, first_room, room_mapping
+        return objects_in_script, new_object_ids_in_script, first_room, room_mapping
 
-    def prepare_from_precondition(self, precond, objects_in_script, graph_dict):
+    def prepare_from_precondition(self, precond, objects_in_script, graph_dict, new_obj_ids=set([]), closed_loop=False):
 
         object_placing = self.object_placing
         objects_to_place = list(object_placing.keys())
@@ -547,6 +553,8 @@ class graph_dict_helper(object):
 
         for p in precond:
             for k, v in p.items():
+
+
                 if k == 'location':
                     # handle when adding missing scripts
                     continue
@@ -711,8 +719,8 @@ class graph_dict_helper(object):
 
                 number_objects_to_add = max_occupancy - len(occupied_edges)
                 if number_objects_to_add < 0:
-                    import ipdb
-                    ipdb.set_trace()
+                    import pdb
+                    pdb.set_trace()
                 
                 object_placing = self.object_placing
                 random.shuffle(objects_to_place)

@@ -1,0 +1,9 @@
+Type: no-generation
+Failed Step: Hang up car keys
+
+Task: Hang up car keys
+Error Object: none
+Error Type: no generated output
+Skip: False
+Error: How can I hang up car keys? A correct step would be to
+Step 1: Walk to home office
